@@ -2,21 +2,20 @@
 
 <h1> Region-Aware Text-to-Image Generation via Hard Binding and Soft Refinement </h1>
 
-[**Zhennan Chen**](#)<sup>1*</sup> · [**Yajie Li**](#)<sup>1*</sup> · [**Haofan Wang**](https://haofanwang.github.io/)<sup>2,3</sup> · [**Zhibo Chen**](#)<sup>3</sup> · [**Zhengkai Jiang**](https://jiangzhengkai.github.io/)<sup>4</sup> · [**Jun Li**](https://sites.google.com/view/junlineu/)<sup>1</sup> · [**Qian Wang**](#)<sup>5</sup> · [**Jian Yang**](https://scholar.google.com/citations?user=6CIDtZQAAAAJ&hl=zh-CN&oi=ao)<sup>1</sup> ·[**Ying Tai**](https://tyshiwo.github.io/)<sup>1^</sup>
+[**Zhennan Chen**](#)<sup>1*</sup> · [**Yajie Li**](#)<sup>1*</sup> · [**Haofan Wang**](https://haofanwang.github.io/)<sup>2,3</sup> · [**Zhibo Chen**](#)<sup>3</sup> · [**Zhengkai Jiang**](https://jiangzhengkai.github.io/)<sup>4</sup> · [**Jun Li**](https://sites.google.com/view/junlineu/)<sup>1</sup> · [**Qian Wang**](#)<sup>5</sup> · [**Jian Yang**](https://scholar.google.com/citations?user=6CIDtZQAAAAJ&hl=zh-CN&oi=ao)<sup>1</sup> ·[**Ying Tai**](https://tyshiwo.github.io/)<sup>1✉</sup>
 
-<sup>1</sup>Nanjing University · <sup>2</sup>InstantX · <sup>3</sup>Liblib AI · <sup>4</sup>HKUST · <sup>5</sup>China Mobile
+<sup>1</sup>Nanjing University · <sup>2</sup>InstantX Team · <sup>3</sup>Liblib AI · <sup>4</sup>HKUST · <sup>5</sup>China Mobile
 
 <a href='https://arxiv.org/abs/2411.06558'><img src='https://img.shields.io/badge/Technique-Report-red'></a>
 </div>
 
-## Introduction
 <table class="center">
   <tr>
     <td width=100% style="border: none"><img src="assets/pictures/teaser.jpg" style="width:100%"></td>
   </tr>
 </table>
 
-**Abstract**: In this paper, we present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method conditioned on regional descriptions for precise layout composition. Regional prompting, or compositional generation, which enables fine-grained spatial control, has gained increasing attention for its practicality in real-world applications. However, previous methods either introduce additional trainable modules, thus only applicable to specific models, or manipulate on score maps within cross-attention layers using attention masks, resulting in limited control strength when the number of regions increases. To handle these limitations, we decouple the multi-region generation into two sub-tasks, the construction of individual region (**Regional Hard Binding**) that ensures the regional prompt is properly executed, and the overall detail refinement (**Regional Soft Refinement**) over regions that dismiss the visual boundaries and enhance adjacent interactions. Furthermore, RAG novelly makes repainting feasible, where users can modify specific unsatisfied regions in the last generation while keeping all other regions unchanged, without relying on additional inpainting models. Our approach is tuning-free and applicable to other frameworks as an enhancement to the prompt following property. Quantitative and qualitative experiments demonstrate that RAG achieves superior performance over attribute binding and object relationship than previous tuning-free methods. 
+We present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method conditioned on regional descriptions for precise layout composition. Regional prompting, or compositional generation, which enables fine-grained spatial control, has gained increasing attention for its practicality in real-world applications. However, previous methods either introduce additional trainable modules, thus only applicable to specific models, or manipulate on score maps within cross-attention layers using attention masks, resulting in limited control strength when the number of regions increases. To handle these limitations, we decouple the multi-region generation into two sub-tasks, the construction of individual region (**Regional Hard Binding**) that ensures the regional prompt is properly executed, and the overall detail refinement (**Regional Soft Refinement**) over regions that dismiss the visual boundaries and enhance adjacent interactions. Furthermore, RAG novelly makes repainting feasible, where users can modify specific unsatisfied regions in the last generation while keeping all other regions unchanged, without relying on additional inpainting models. Our approach is tuning-free and applicable to other frameworks as an enhancement to the prompt following property. Quantitative and qualitative experiments demonstrate that RAG achieves superior performance over attribute binding and object relationship than previous tuning-free methods. 
 
 ## News ##
 - **2024.11.12**: 🚀 Our code and technical report are released.
