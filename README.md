@@ -178,17 +178,24 @@ print(f"Image saved as {filename}")
 <summary>Examples</summary> 
 <table class="center">
   <tr>
-    <td width=50% style="border: none"><img src="assets/pictures/celebrity.png" style="width:100%"></td>
-    <td width=50% style="border: none"><img src="assets/pictures/animal.png" style="width:100%"></td>
+    <td width=100% style="border: none"><img src="assets/pictures/celebrity.png" style="width:100%"></td>
   </tr>
   <tr>
-    <td width="50%" style="border: none; text-align: center; word-wrap: break-word">On the left, Einstein is painting the Mona Lisa; in the center, Elon Reeve Musk is participating in the U.S. presidential election; on the right, Trump is hosting a Tesla product launch.</td>
-    <td width="50%" style="border: none; text-align: center; word-wrap: break-word">On the left, a penguin wearing sunglasses is sunbathing in the desert; in the center, a tiger wearing a scarf is standing on a glacier; on the right, a panda in a windbreaker is walking through the forest.</td>
+    <td width="100%" style="border: none; text-align: center; word-wrap: break-word">On the left, Einstein is painting the Mona Lisa; in the center, Elon Reeve Musk is participating in the U.S. presidential election; on the right, Trump is hosting a Tesla product launch.</td>
   </tr>
   <tr>
     <td width="50%" style="border: none; text-align: center; word-wrap: break-word">
       <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG.py --idx=0</pre>
     </td>
+    </td>
+  </td>
+  <tr>
+    <td width=100% style="border: none"><img src="assets/pictures/animal.png" style="width:100%"></td>
+  </tr>
+  <tr>
+    <td width="100%" style="border: none; text-align: center; word-wrap: break-word">On the left, a penguin wearing sunglasses is sunbathing in the desert; in the center, a tiger wearing a scarf is standing on a glacier; on the right, a panda in a windbreaker is walking through the forest.</td>
+  </tr>
+  <tr>
     <td width="50%" style="border: none; text-align: center; word-wrap: break-word">
       <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG.py --idx=1</pre>
     </td>
