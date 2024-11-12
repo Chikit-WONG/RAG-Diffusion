@@ -1,0 +1,228 @@
+[
+{
+    "idx": 0,
+    "prompt": "From left to right: a red cake, an orange cake, a yellow cake, and a green cake.",
+    "SR_hw_split_ratio": "0.25, 0.25, 0.25, 0.25",
+    "SR_prompt": "A luscious red cake, possibly layered, topped with glossy cherries or berries adding a vibrant pop against the cake's deep hue. BREAK An inviting orange cake with a citrusy glaze, perhaps garnished with delicate orange zest curls, exuding a fresh aroma. BREAK A bright yellow cake, reminiscent of sunny days, with a rich lemon flavor and topped with soft, creamy frosting. BREAK A refreshing green cake, likely mint or pistachio, its smooth surface adorned with small edible leaves or nuts for an artistic finish.",
+    "HB_prompt_list": [
+        "Red cake",
+        "Orange cake",
+        "Yellow cake",
+        "Green cake"
+    ],
+    "HB_m_offset_list": [
+        0.01,
+        0.26,
+        0.51,
+        0.76
+    ],
+    "HB_n_offset_list": [
+        0.15,
+        0.15,
+        0.15,
+        0.15
+    ],
+    "HB_m_scale_list": [
+        0.23,
+        0.23,
+        0.23,
+        0.23
+    ],
+    "HB_n_scale_list": [
+        0.7,
+        0.7,
+        0.7,
+        0.7
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1235,
+    "SR_delta": 0.0,
+    "HB_replace": 1
+},
+{
+    "idx": 1,
+    "prompt": "The spring, summer, autumn, and winter of Hokkaido.",
+    "SR_hw_split_ratio": "0.5,0.5,0.5;0.5,0.5,0.5",
+    "SR_prompt": "Spring in Hokkaido with lush cherry blossoms, fresh greenery, and pastel hues creating a scene of renewal. BREAK Winter Mount Fuji covered in pristine snow, enveloping the landscape in serene calm. BREAK A vibrant summer in Hokkaido under expansive blue skies, fields saturated with color, inviting warmth and energy. BREAK Autumn in Hokkaido unfolds with fiery foliage, basking in a golden glow, expressing nature's grand finale.",
+    "HB_prompt_list": [
+        "Spring scene in Hokkaido",
+        "Winter Mount Fuji.",
+        "Summer scene in Hokkaido",
+        "Autumn scene in Hokkaido"
+    ],
+    "HB_m_offset_list": [
+        0.1,
+        0.6,
+        0.1,
+        0.6
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.1,
+        0.6,
+        0.6
+    ],
+    "HB_m_scale_list": [
+        0.4,
+        0.4,
+        0.4,
+        0.4
+    ],
+    "HB_n_scale_list": [
+        0.4,
+        0.4,
+        0.4,
+        0.4
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1233,
+    "SR_delta": 1.0,
+    "HB_replace": 1
+},
+{
+    "idx": 2,
+    "prompt": "A man on the left is holding a bag and a man on the right is holding a book",
+    "SR_hw_split_ratio": "0.5,0.5",
+    "SR_prompt": "A man holding a bag on the left, his stance casual as he gazes at the scene around him. BREAK On the right, a man holding a book, his eyes focused on the text, exuding a sense of calm and introspection.",
+    "HB_prompt_list": [
+        "Man holding a bag",
+        "Man holding a book"
+    ],
+    "HB_m_offset_list": [
+        0.05,
+        0.55
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.1
+    ],
+    "HB_m_scale_list": [
+        0.4,
+        0.4
+    ],
+    "HB_n_scale_list": [
+        0.8,
+        0.8
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1238,
+    "SR_delta": 0.0,
+    "HB_replace": 3
+},
+{
+    "idx": 3,
+    "prompt": "A mountain on the left, a crouching man in the middle, and an ancient architecture on the right.",
+    "SR_hw_split_ratio": "0.33, 0.34, 0.33",
+    "SR_prompt": "A mountain towering on the left, its peaks reaching into the sky, the steep slopes inviting exploration and wonder. BREAK In the middle, a crouching man is focused, his posture suggesting thoughtfulness or a momentary pause in action. BREAK On the right, an ancient architecture, its stone walls and archways revealing stories of the past, stands firmly, offering a glimpse into historical grandeur.",
+    "HB_prompt_list": [
+        "Mountain",
+        "Crouching man",
+        "Ancient architecture"
+    ],
+    "HB_m_offset_list": [
+        0.02,
+        0.35,
+        0.68
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.1,
+        0.0
+    ],
+    "HB_m_scale_list": [
+        0.29,
+        0.3,
+        0.29
+    ],
+    "HB_n_scale_list": [
+        0.8,
+        0.8,
+        1.0
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1236,
+    "SR_delta": 0.0,
+    "HB_replace": 3
+},
+{
+    "idx": 4,
+    "prompt": "A two-tier cabinet: the top shelf has two pears made of wool, and the bottom shelf has three apples made of wool.",
+    "SR_hw_split_ratio": "0.5; 0.5",
+    "SR_prompt": "Two ripe green pears made of wool, elegantly placed on the top shelf, catching soft rays of light filtering into the room. BREAK Three red apples made of wool, positioned neatly on the bottom shelf, their glossy surfaces inviting a closer look.",
+    "HB_prompt_list": [
+        "One pear made of wool on the table",
+        "One pear made of wool on the table",
+        "One apple made of wool on the table",
+        "One apple made of wool on the table",
+        "One apple made of wool on the table"
+    ],
+    "HB_m_offset_list": [
+        0.05,
+        0.55,
+        0.0,
+        0.33,
+        0.66
+    ],
+    "HB_n_offset_list": [
+        0.05,
+        0.05,
+        0.55,
+        0.55,
+        0.55
+    ],
+    "HB_m_scale_list": [
+        0.4,
+        0.4,
+        0.3,
+        0.3,
+        0.3
+    ],
+    "HB_n_scale_list": [
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1238,
+    "SR_delta": 0.5,
+    "HB_replace": 2
+},
+{
+    "idx": 5,
+    "prompt": "On the left is a forest made of wool, and on the right is a volcano made of wool.",
+    "SR_hw_split_ratio": "0.5, 0.5",
+    "SR_prompt": "A dense forest made entirely of soft wool stands on the left, with its textured trees creating a tranquil scene. BREAK On the right, a wool volcano rises with a playful design, slightly fluffy around the edges, casting an imaginative shadow across the landscape.",
+    "HB_prompt_list": [
+        "Wool forest",
+        "Wool volcano"
+    ],
+    "HB_m_offset_list": [
+        0.05,
+        0.55
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.1
+    ],
+    "HB_m_scale_list": [
+        0.4,
+        0.4
+    ],
+    "HB_n_scale_list": [
+        0.8,
+        0.8
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1236,
+    "SR_delta": 1.0,
+    "HB_replace": 2
+}
+]
