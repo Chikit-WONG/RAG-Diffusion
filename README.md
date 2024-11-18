@@ -425,13 +425,10 @@ image.save(filename)
 
 # 📖BibTeX
 ```
-@misc{chen2024regionawaretexttoimagegenerationhard,
-      title={Region-Aware Text-to-Image Generation via Hard Binding and Soft Refinement}, 
-      author={Zhennan Chen and Yajie Li and Haofan Wang and Zhibo Chen and Zhengkai Jiang and Jun Li and Qian Wang and Jian Yang and Ying Tai},
-      year={2024},
-      eprint={2411.06558},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2411.06558}, 
+@article{chen2024region,
+  title={Region-Aware Text-to-Image Generation via Hard Binding and Soft Refinement},
+  author={Chen, Zhennan and Li, Yajie and Wang, Haofan and Chen, Zhibo and Jiang, Zhengkai and Li, Jun and Wang, Qian and Yang, Jian and Tai, Ying},
+  journal={arXiv preprint arXiv:2411.06558},
+  year={2024}
 }
 ```
