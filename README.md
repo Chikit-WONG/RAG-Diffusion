@@ -7,6 +7,7 @@
 <sup>1</sup>Nanjing University · <sup>2</sup>InstantX Team · <sup>3</sup>Liblib AI · <sup>4</sup>HKUST · <sup>5</sup>China Mobile
 
 <a href='https://arxiv.org/abs/2411.06558'><img src='https://img.shields.io/badge/Technique-Report-red'></a>
+<a href='https://huggingface.co/spaces/NJU/RAG-Diffusion'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue'></a>
 </div>
 
 <table class="center">
