@@ -234,6 +234,8 @@ print(f"Image saved as {filename}")
    
 
 ### 2. Image Repainting
+RAG showcases its image repainting capabilities, achieving competitive results against the latest [**Flux.1-Fill-Dev**](https://github.com/black-forest-labs/flux/blob/main/docs/fill.md) and [**BrushNet**](https://github.com/TencentARC/BrushNet).
+<img src="assets/pictures/repainting_result.jpg" style="width:100%">
 <details open>
 <summary>Example 1</summary>
 <table class="center">
