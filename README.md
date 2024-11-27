@@ -19,6 +19,7 @@
 We present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method conditioned on regional descriptions for precise layout composition. Regional prompting, or compositional generation, which enables fine-grained spatial control, has gained increasing attention for its practicality in real-world applications. However, previous methods either introduce additional trainable modules, thus only applicable to specific models, or manipulate on score maps within cross-attention layers using attention masks, resulting in limited control strength when the number of regions increases. To handle these limitations, we decouple the multi-region generation into two sub-tasks, the construction of individual region (**Regional Hard Binding**) that ensures the regional prompt is properly executed, and the overall detail refinement (**Regional Soft Refinement**) over regions that dismiss the visual boundaries and enhance adjacent interactions. Furthermore, RAG novelly makes repainting feasible, where users can modify specific unsatisfied regions in the last generation while keeping all other regions unchanged, without relying on additional inpainting models. Our approach is tuning-free and applicable to other frameworks as an enhancement to the prompt following property. Quantitative and qualitative experiments demonstrate that RAG achieves superior performance over attribute binding and object relationship than previous tuning-free methods. 
 
 ## News ##
+- **2024.11.27**: 📢 Repainting code is released.
 - **2024.11.20**: 👉 RAG Online Demo is Live. Try it now! ([**Link**](https://huggingface.co/spaces/NJU/RAG-Diffusion))
 - **2024.11.12**: 🚀 Our code and technical report are released.
 
@@ -28,7 +29,7 @@ We present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method
 ```bash
 conda create -n RAG python==3.9
 conda activate RAG
-pip install xformers==0.0.28.post1 diffusers peft torchvision==0.19.1 opencv-python==4.10.0.84 sentencepiece==0.2.0 protobuf==5.28.1
+pip install xformers==0.0.28.post1 diffusers peft torchvision==0.19.1 opencv-python==4.10.0.84 sentencepiece==0.2.0 protobuf==5.28.1 scipy==1.13.1
 ```
 ### 2. Quick Start
 ```python
@@ -190,6 +191,8 @@ print(f"Image saved as {filename}")
     </td>
     </td>
   </td>
+  </table>
+  <table class="center">
   <tr>
     <td width=100% style="border: none"><img src="assets/pictures/animal.png" style="width:100%"></td>
   </tr>
@@ -235,36 +238,209 @@ print(f"Image saved as {filename}")
    
 
 ### 2. Image Repainting
+```python
+from RAG_pipeline_flux import RAG_FluxPipeline
+import argparse
+import torch
+from PIL import Image
+import json
+
+pipe = RAG_FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16)
+pipe = pipe.to("cuda")
+
+prompt = "A vase and an apple."
+HB_replace = 2
+HB_prompt_list =  [
+    "Vase",
+    "Apple"
+]
+HB_m_offset_list = [
+    0.05,
+    0.65
+]
+HB_n_offset_list = [
+    0.1,
+    0.25
+]
+HB_m_scale_list = [
+    0.5,
+    0.3
+]
+HB_n_scale_list = [
+    0.8,
+    0.5
+]
+SR_delta = 0.5
+SR_hw_split_ratio = "0.6, 0.4"
+SR_prompt = "A beautifully crafted vase, its elegant curves and floral embellishments standing prominently on the left side. Its delicate design echoes a sense of timeless artistry. BREAK On the right, a shiny apple with vibrant red skin, enticing with its perfectly smooth surface and hints of green around the stem."
+height = 1024
+width = 1024
+seed = 1202
+
+Repainting_prompt = "A vase and a Rubik's Cube."
+Repainting_SR_prompt = "A beautifully crafted vase, its elegant curves and floral embellishments standing prominently on the left side. Its delicate design echoes a sense of timeless artistry. BREAK On the right, a vibrant Rubik's Cube, with its distinct colorful squares, sitting next to the vase, adding a playful and dynamic contrast to the still life composition."
+Repainting_HB_prompt = "Rubik's Cube"
+Repainting_mask = Image.open("data/Repainting_mask/mask_6.png").convert("L") 
+Repainting_HB_replace = 3
+Repainting_seed = 100
+Repainting_single = 0
+
+
+image, Repainting_image_output = pipe(
+        SR_delta=SR_delta,
+        SR_hw_split_ratio=SR_hw_split_ratio,
+        SR_prompt=SR_prompt,
+        HB_prompt_list=HB_prompt_list,
+        HB_m_offset_list=HB_m_offset_list,
+        HB_n_offset_list=HB_n_offset_list,
+        HB_m_scale_list=HB_m_scale_list,
+        HB_n_scale_list=HB_n_scale_list,
+        HB_replace=HB_replace,
+        seed=seed,
+        Repainting_mask=Repainting_mask,
+        Repainting_prompt=Repainting_prompt,
+        Repainting_SR_prompt=Repainting_SR_prompt,
+        Repainting_HB_prompt=Repainting_HB_prompt,
+        Repainting_HB_replace=Repainting_HB_replace,
+        Repainting_seed=Repainting_seed,
+        Repainting_single=Repainting_single,
+        prompt=prompt, 
+        height=height, 
+        width=width, 
+        num_inference_steps=20, 
+        guidance_scale=3.5
+        )
+
+image.images[0].save("RAG_Original.png")
+Repainting_image_output.images[0].save("RAG_Repainting.png")
+```
 RAG showcases its image repainting capabilities, achieving competitive results against the latest [**Flux.1-Fill-Dev**](https://github.com/black-forest-labs/flux/blob/main/docs/fill.md) and [**BrushNet**](https://github.com/TencentARC/BrushNet).
 <img src="assets/pictures/repainting_result.jpg" style="width:100%">
 <details open>
-<summary>Example 1</summary>
+<summary>Example</summary>
 <table class="center">
     <tr>
-        <td style="border: none"><img src="assets/pictures/shirt.png"></td>
-        <td style="border: none"><img src="assets/pictures/shirt_noise.png"></td>
-        <td style="border: none"><img src="assets/pictures/shirt_repainting.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_0.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_0.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_0.png"></td>
     </tr>
     <tr>
-        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A brown curly hair African girl in blue shirt printed with a bird."
-
-Repainting prompt: "A brown curly hair African girl in pink shirt printed with a bird."</td>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A vase and an apple."
+        
+Repainting prompt: "A vase and a Rubik's Cube."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=0</pre>
+      </td>
     </tr>
 </table>
-</details>
 
-<details open>
-<summary>Example 2</summary>
 <table class="center">
     <tr>
-        <td style="border: none"><img src="assets/pictures/anime.png"></td>
-        <td style="border: none"><img src="assets/pictures/anime_noise.png"></td>
-        <td style="border: none"><img src="assets/pictures/anime_repainting.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_1.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_1.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_1.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "Three plush toys on the table."
+        
+Repainting prompt: "Two plush toys and one balloon on the table."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=1</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_2.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_2.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_2.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A Siamese cat lying on the grass."
+        
+Repainting prompt: "A Corgi lying on the grass."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=2</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_3.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_3.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_3.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A boy holding a basketball in one hand."
+        
+Repainting prompt: "A boy holding a soccer in one hand."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=3</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_4.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_4.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_4.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A brown curly hair African woman in blue puffy skirt."
+        
+Repainting prompt: "A brown curly hair African woman in pink suit."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=4</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_5.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_5.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_5.png"></td>
     </tr>
     <tr>
         <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "A man on the left, a woman on the right."
-
+        
 Repainting prompt: "A man on the left, an anime woman on the right."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=5</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/original_6.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/noise_6.png"></td>
+        <td style="border: none"><img src="assets/pictures/Repainting_image/Repainting_6.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Text prompt: "Four ceramic mugs in different colors are placed on a wooden table."
+        
+Repainting prompt: "Three ceramic mugs in different colors and a Starbucks cup are placed on a wooden table."</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_Repainting.py --idx=6</pre>
+      </td>
     </tr>
 </table>
 </details>
