@@ -472,17 +472,27 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
             module.gradient_checkpointing = value
 
     def HB_replace_hidden_states(self, hidden_states, HB_hidden_states_list_list, HB_m_offset_list,HB_n_offset_list,HB_m_scale_list,HB_n_scale_list, latent_h, latent_w, HB_idx):
-        hidden_states=hidden_states.view(hidden_states.shape[0], latent_h,latent_w, hidden_states.shape[2])
+        hidden_states = hidden_states.view(hidden_states.shape[0], latent_h,latent_w, hidden_states.shape[2])
 
         for HB_hidden_states_list, HB_m_offset, HB_n_offset, HB_m_scale, HB_n_scale in zip(HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list):
             HB_hidden_states = HB_hidden_states_list[HB_idx]
             HB_hidden_states = HB_hidden_states.view(HB_hidden_states.shape[0], HB_n_scale,HB_m_scale, HB_hidden_states.shape[2])
-            hidden_states[:,HB_n_offset:HB_n_offset+HB_n_scale,HB_m_offset:HB_m_offset+HB_m_scale,:] = HB_hidden_states
+            hidden_states[:, HB_n_offset:HB_n_offset+HB_n_scale, HB_m_offset:HB_m_offset+HB_m_scale, :] = HB_hidden_states
 
         hidden_states = hidden_states.view(hidden_states.shape[0], latent_h*latent_w, hidden_states.shape[3])
-        HB_idx+=1
+        HB_idx += 1
 
         return hidden_states, HB_idx
+    
+    def Repainting_replace_hidden_states(self, hidden_states, original_hidden_states_list, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, latent_h, latent_w, Repainting_idx):
+        original_hidden_states = original_hidden_states_list[Repainting_idx]
+        original_hidden_states = original_hidden_states.view(original_hidden_states.shape[0], latent_h, latent_w, original_hidden_states.shape[2])
+        hidden_states = hidden_states.view(hidden_states.shape[0], latent_h,latent_w, hidden_states.shape[2])
+        original_hidden_states[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1] = hidden_states[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1]
+        hidden_states = original_hidden_states.view(hidden_states.shape[0], latent_h*latent_w, hidden_states.shape[3])
+        Repainting_idx += 1
+
+        return hidden_states, Repainting_idx
 
     def forward(
         self,
@@ -504,7 +514,13 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         HB_m_offset_list: List[int]=None,
         HB_n_offset_list: List[int]=None,
         HB_m_scale_list: List[int]=None,
-        HB_n_scale_list: List[int]=None
+        HB_n_scale_list: List[int]=None,
+        return_hidden_states_list: bool = False,
+        original_hidden_states_list: List[torch.Tensor] = None,
+        Repainting_HB_m_offset: int=None,
+        Repainting_HB_n_offset: int=None,
+        Repainting: torch.Tensor = None,
+        Repainting_single: int=False,
     ) -> Union[torch.FloatTensor, Transformer2DModelOutput]:
         """
         The [`FluxTransformer2DModel`] forward method.
@@ -532,6 +548,8 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
             If `return_dict` is True, an [`~models.transformer_2d.Transformer2DModelOutput`] is returned, otherwise a
             `tuple` where the first element is the sample tensor.
         """
+        if return_hidden_states_list:
+            hidden_states_list=[]
         if joint_attention_kwargs is not None:
             joint_attention_kwargs = joint_attention_kwargs.copy()
             lora_scale = joint_attention_kwargs.pop("scale", 1.0)
@@ -549,8 +567,15 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         hidden_states = self.x_embedder(hidden_states)
 
         if HB_hidden_states_list_list is not None:
-            HB_idx=0
-            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list,HB_n_offset_list,HB_m_scale_list,HB_n_scale_list, latent_h, latent_w, HB_idx)
+            HB_idx = 0
+            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list, latent_h, latent_w, HB_idx)
+
+        if original_hidden_states_list is not None:
+            Repainting_idx = 0
+            hidden_states, Repainting_idx = self.Repainting_replace_hidden_states(hidden_states, original_hidden_states_list, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, latent_h, latent_w, Repainting_idx)
+
+        if return_hidden_states_list:
+            hidden_states_list.append(hidden_states)
 
         timestep = timestep.to(hidden_states.dtype) * 1000
         if guidance is not None:
@@ -626,7 +651,13 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
                     )
 
                 if HB_hidden_states_list_list is not None:
-                    hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list,HB_n_offset_list,HB_m_scale_list,HB_n_scale_list, latent_h, latent_w, HB_idx)
+                    hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list, latent_h, latent_w, HB_idx)
+
+                if original_hidden_states_list is not None:
+                    hidden_states, Repainting_idx = self.Repainting_replace_hidden_states(hidden_states, original_hidden_states_list, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, latent_h, latent_w, Repainting_idx)
+
+                if return_hidden_states_list:
+                    hidden_states_list.append(hidden_states)
 
             # controlnet residual
             if controlnet_block_samples is not None:
@@ -686,16 +717,29 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
                     ) 
 
                 if HB_hidden_states_list_list is not None:
-                    hidden_states_clone = hidden_states.clone()[:, encoder_hidden_states.shape[1] :, ...].view(hidden_states.shape[0],latent_h,latent_w,hidden_states.shape[2])
+                    hidden_states_clone = hidden_states.clone()[:, encoder_hidden_states.shape[1] :, ...].view(hidden_states.shape[0], latent_h, latent_w, hidden_states.shape[2])
 
                     for HB_hidden_states_list, HB_m_offset, HB_n_offset, HB_m_scale,HB_n_scale in zip(HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list):
                         HB_hidden_states = HB_hidden_states_list[HB_idx]
                         HB_hidden_states = HB_hidden_states[:, encoder_hidden_states.shape[1] :, ...].view(HB_hidden_states.shape[0], HB_n_scale, HB_m_scale, HB_hidden_states.shape[2])
-                        hidden_states_clone[:,HB_n_offset:HB_n_offset+HB_n_scale,HB_m_offset:HB_m_offset+HB_m_scale,:]=HB_hidden_states
+                        hidden_states_clone[:, HB_n_offset:HB_n_offset+HB_n_scale,HB_m_offset:HB_m_offset+HB_m_scale, :] = HB_hidden_states
 
                     hidden_states_clone = hidden_states_clone.view(hidden_states.shape[0], latent_h*latent_w, hidden_states.shape[2])
                     hidden_states[:, encoder_hidden_states.shape[1] :, ...] = hidden_states_clone
-                    HB_idx+=1
+                    HB_idx += 1
+
+                if original_hidden_states_list is not None:
+                    if Repainting_single:
+                        hidden_states_clone = hidden_states.clone()[:, encoder_hidden_states.shape[1] :, ...].view(hidden_states.shape[0], latent_h, latent_w, hidden_states.shape[2])
+                        original_hidden_states = original_hidden_states_list[Repainting_idx]
+                        original_hidden_states = original_hidden_states[:, encoder_hidden_states.shape[1] :, ...].view(original_hidden_states.shape[0], latent_h, latent_w, original_hidden_states.shape[2])
+                        original_hidden_states[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1] = hidden_states_clone[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1]
+                        hidden_states_clone = original_hidden_states.view(hidden_states.shape[0], latent_h*latent_w, hidden_states.shape[2])
+                        hidden_states[:, encoder_hidden_states.shape[1] :, ...] = hidden_states_clone
+                    Repainting_idx += 1
+
+                if return_hidden_states_list:
+                    hidden_states_list.append(hidden_states)
 
             # controlnet residual
             if controlnet_single_block_samples is not None:
@@ -711,201 +755,33 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
         hidden_states = self.norm_out(hidden_states, temb)
 
         if HB_hidden_states_list_list is not None:
-            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list,HB_n_offset_list,HB_m_scale_list,HB_n_scale_list, latent_h, latent_w, HB_idx)
+            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list, latent_h, latent_w, HB_idx)
+
+        if original_hidden_states_list is not None:
+            hidden_states, Repainting_idx = self.Repainting_replace_hidden_states(hidden_states, original_hidden_states_list, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, latent_h, latent_w, Repainting_idx)
+
+        if return_hidden_states_list:
+            hidden_states_list.append(hidden_states)
 
         output = self.proj_out(hidden_states)
 
         if HB_hidden_states_list_list is not None:
-            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list,HB_n_offset_list,HB_m_scale_list,HB_n_scale_list, latent_h, latent_w, HB_idx)
+            hidden_states, HB_idx = self.HB_replace_hidden_states(hidden_states, HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list, latent_h, latent_w, HB_idx)
+
+        if original_hidden_states_list is not None:
+            hidden_states, Repainting_idx = self.Repainting_replace_hidden_states(hidden_states, original_hidden_states_list, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, latent_h, latent_w, Repainting_idx)
+
+        if return_hidden_states_list:
+            hidden_states_list.append(hidden_states)
 
         if USE_PEFT_BACKEND:
             # remove `lora_scale` from each PEFT layer
             unscale_lora_layers(self, lora_scale)
 
         if not return_dict:
-            return (output,)
-
-        return Transformer2DModelOutput(sample=output)
-
-    def forward_hidden_states_list(
-        self,
-        hidden_states: torch.Tensor,
-        encoder_hidden_states: torch.Tensor = None,
-        pooled_projections: torch.Tensor = None,
-        timestep: torch.LongTensor = None,
-        img_ids: torch.Tensor = None,
-        txt_ids: torch.Tensor = None,
-        guidance: torch.Tensor = None,
-        joint_attention_kwargs: Optional[Dict[str, Any]] = None,
-        controlnet_block_samples=None,
-        controlnet_single_block_samples=None,
-        return_dict: bool = True,
-    ) -> Union[torch.FloatTensor, Transformer2DModelOutput]:
-        """
-        The [`FluxTransformer2DModel`] forward method.
-
-        Args:
-            hidden_states (`torch.FloatTensor` of shape `(batch size, channel, height, width)`):
-                Input `hidden_states`.
-            encoder_hidden_states (`torch.FloatTensor` of shape `(batch size, sequence_len, embed_dims)`):
-                Conditional embeddings (embeddings computed from the input conditions such as prompts) to use.
-            pooled_projections (`torch.FloatTensor` of shape `(batch_size, projection_dim)`): Embeddings projected
-                from the embeddings of input conditions.
-            timestep ( `torch.LongTensor`):
-                Used to indicate denoising step.
-            block_controlnet_hidden_states: (`list` of `torch.Tensor`):
-                A list of tensors that if specified are added to the residuals of transformer blocks.
-            joint_attention_kwargs (`dict`, *optional*):
-                A kwargs dictionary that if specified is passed along to the `AttentionProcessor` as defined under
-                `self.processor` in
-                [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~models.transformer_2d.Transformer2DModelOutput`] instead of a plain
-                tuple.
-
-        Returns:
-            If `return_dict` is True, an [`~models.transformer_2d.Transformer2DModelOutput`] is returned, otherwise a
-            `tuple` where the first element is the sample tensor.
-        """
-        hidden_states_list=[]
-        
-        if joint_attention_kwargs is not None:
-            joint_attention_kwargs = joint_attention_kwargs.copy()
-            lora_scale = joint_attention_kwargs.pop("scale", 1.0)
-        else:
-            lora_scale = 1.0
-
-        if USE_PEFT_BACKEND:
-            # weight the lora layers by setting `lora_scale` for each PEFT layer
-            scale_lora_layers(self, lora_scale)
-        else:
-            if joint_attention_kwargs is not None and joint_attention_kwargs.get("scale", None) is not None:
-                logger.warning(
-                    "Passing `scale` via `joint_attention_kwargs` when not using the PEFT backend is ineffective."
-                )
-        hidden_states = self.x_embedder(hidden_states)
-        hidden_states_list.append(hidden_states)
-
-        timestep = timestep.to(hidden_states.dtype) * 1000
-        if guidance is not None:
-            guidance = guidance.to(hidden_states.dtype) * 1000
-        else:
-            guidance = None
-        temb = (
-            self.time_text_embed(timestep, pooled_projections)
-            if guidance is None
-            else self.time_text_embed(timestep, guidance, pooled_projections)
-        )
-        encoder_hidden_states = self.context_embedder(encoder_hidden_states)
-
-        if txt_ids.ndim == 3:
-            logger.warning(
-                "Passing `txt_ids` 3d torch.Tensor is deprecated."
-                "Please remove the batch dimension and pass it as a 2d torch Tensor"
-            )
-            txt_ids = txt_ids[0]
-        if img_ids.ndim == 3:
-            logger.warning(
-                "Passing `img_ids` 3d torch.Tensor is deprecated."
-                "Please remove the batch dimension and pass it as a 2d torch Tensor"
-            )
-            img_ids = img_ids[0]
-
-        ids = torch.cat((txt_ids, img_ids), dim=0)
-        image_rotary_emb = self.pos_embed(ids)
-
-        for index_block, block in enumerate(self.transformer_blocks):
-            if self.training and self.gradient_checkpointing:
-
-                def create_custom_forward(module, return_dict=None):
-                    def custom_forward(*inputs):
-                        if return_dict is not None:
-                            return module(*inputs, return_dict=return_dict)
-                        else:
-                            return module(*inputs)
-
-                    return custom_forward
-
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                encoder_hidden_states, hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(block),
-                    hidden_states,
-                    encoder_hidden_states,
-                    temb,
-                    image_rotary_emb,
-                    **ckpt_kwargs,
-                )
-
+            if return_hidden_states_list:
+                    return (output,),hidden_states_list
             else:
-                encoder_hidden_states, hidden_states = block(
-                    hidden_states=hidden_states,
-                    encoder_hidden_states=encoder_hidden_states,
-                    temb=temb,
-                    image_rotary_emb=image_rotary_emb,
-                    joint_attention_kwargs=joint_attention_kwargs,
-                )
-
-                hidden_states_list.append(hidden_states)
-
-            # controlnet residual
-            if controlnet_block_samples is not None:
-                interval_control = len(self.transformer_blocks) / len(controlnet_block_samples)
-                interval_control = int(np.ceil(interval_control))
-                hidden_states = hidden_states + controlnet_block_samples[index_block // interval_control]
-
-        hidden_states = torch.cat([encoder_hidden_states, hidden_states], dim=1)     
-
-        for index_block, block in enumerate(self.single_transformer_blocks):
-            if self.training and self.gradient_checkpointing:
-
-                def create_custom_forward(module, return_dict=None):
-                    def custom_forward(*inputs):
-                        if return_dict is not None:
-                            return module(*inputs, return_dict=return_dict)
-                        else:
-                            return module(*inputs)
-
-                    return custom_forward
-
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(block),
-                    hidden_states,
-                    temb,
-                    image_rotary_emb,
-                    **ckpt_kwargs,
-                )
-
-            else:
-                hidden_states = block(
-                    hidden_states=hidden_states,
-                    temb=temb,
-                    image_rotary_emb=image_rotary_emb,
-                    joint_attention_kwargs=joint_attention_kwargs,
-                ) 
-                hidden_states_list.append(hidden_states)    
-
-            # controlnet residual
-            if controlnet_single_block_samples is not None:
-                interval_control = len(self.single_transformer_blocks) / len(controlnet_single_block_samples)
-                interval_control = int(np.ceil(interval_control))
-                hidden_states[:, encoder_hidden_states.shape[1] :, ...] = (
-                    hidden_states[:, encoder_hidden_states.shape[1] :, ...]
-                    + controlnet_single_block_samples[index_block // interval_control]
-                )
-
-        hidden_states = hidden_states[:, encoder_hidden_states.shape[1] :, ...]
-
-        hidden_states = self.norm_out(hidden_states, temb)
-        hidden_states_list.append(hidden_states)
-        output = self.proj_out(hidden_states)
-        hidden_states_list.append(hidden_states)
-
-        if USE_PEFT_BACKEND:
-            # remove `lora_scale` from each PEFT layer
-            unscale_lora_layers(self, lora_scale)
-
-        if not return_dict:
-            return (output,),hidden_states_list
+                return (output,)
 
         return Transformer2DModelOutput(sample=output)

@@ -1,0 +1,253 @@
+[
+{
+    "idx": 0,
+    "prompt": "A vase and an apple.",
+    "SR_hw_split_ratio": "0.6,0.4",
+    "SR_prompt": "A beautifully crafted vase, its elegant curves and floral embellishments standing prominently on the left side. Its delicate design echoes a sense of timeless artistry. BREAK On the right, a shiny apple with vibrant red skin, enticing with its perfectly smooth surface and hints of green around the stem.",
+    "HB_prompt_list": [
+        "Vase",
+        "Apple"
+    ],
+    "HB_m_offset_list": [
+        0.05,
+        0.65
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.25
+    ],
+    "HB_m_scale_list": [
+        0.5,
+        0.3
+    ],
+    "HB_n_scale_list": [
+        0.8,
+        0.5
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1202,
+    "SR_delta": 0.5,
+    "HB_replace": 2,
+    "Repainting_prompt": "A vase and a Rubik's Cube.",
+    "Repainting_SR_prompt": "A beautifully crafted vase, its elegant curves and floral embellishments standing prominently on the left side. Its delicate design echoes a sense of timeless artistry. BREAK On the right, a vibrant Rubik's Cube, with its distinct colorful squares, sitting next to the vase, adding a playful and dynamic contrast to the still life composition.",
+    "Repainting_HB_prompt": "Rubik's Cube",
+    "Repainting_mask": "data/Repainting_mask/mask_0.png",
+    "Repainting_HB_replace": 3,
+    "Repainting_seed": 100,
+    "Repainting_single": 0
+},
+{
+    "idx": 1,
+    "prompt": "Three plush toys on the table.",
+    "SR_hw_split_ratio": "1,1,1",
+    "SR_prompt": "one white plush toy BREAK one brown plush toy BREAK one yellow plush toy",
+    "HB_prompt_list": [
+    "one white plush toy",
+    "one brown plush toy",
+    "one yellow plush toy"
+    ],
+    "HB_m_offset_list": [
+    0.0,
+    0.33,
+    0.66
+    ],
+    "HB_n_offset_list": [
+    0.2,
+    0.2,
+    0.2
+    ],
+    "HB_m_scale_list": [
+    0.3,
+    0.3,
+    0.3
+    ],
+    "HB_n_scale_list": [
+    0.6,
+    0.6,
+    0.6
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1234,
+    "SR_delta": 0.0,
+    "HB_replace": 2,
+    "Repainting_prompt": "Two plush toys and one balloon on the table.",
+    "Repainting_SR_prompt": "one white plush toy BREAK one brown plush toy BREAK balloon",
+    "Repainting_HB_prompt": "Balloon",
+    "Repainting_mask": "data/Repainting_mask/mask_1.png",
+    "Repainting_HB_replace": 2,
+    "Repainting_seed": 490,
+    "Repainting_single": 0
+},
+{
+    "idx": 2,
+    "prompt": "A Siamese cat lying on the grass.",
+    "SR_hw_split_ratio": "1,1",
+    "SR_prompt": "A BREAK A (This case does not use SR.)",
+    "HB_prompt_list": [
+    ],
+    "HB_m_offset_list": [
+    ],
+    "HB_n_offset_list": [
+    ],
+    "HB_m_scale_list": [
+    ],
+    "HB_n_scale_list": [
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1248,
+    "SR_delta": 0.0,
+    "HB_replace": -1,
+    "Repainting_prompt": "A Corgi lying on the grass.",
+    "Repainting_SR_prompt": "A BREAK A (This case does not use SR.)",
+    "Repainting_HB_prompt": "Corgi",
+    "Repainting_mask": "data/Repainting_mask/mask_2.png",
+    "Repainting_HB_replace": 2,
+    "Repainting_seed": 118,
+    "Repainting_single": 0
+},
+{
+    "idx": 3,
+    "prompt": "A boy holding a basketball in one hand.",
+    "SR_hw_split_ratio": "1,1",
+    "SR_prompt": "A BREAK A (This case does not use SR.)",
+    "HB_prompt_list": [
+    ],
+    "HB_m_offset_list": [
+    ],
+    "HB_n_offset_list": [
+    ],
+    "HB_m_scale_list": [
+    ],
+    "HB_n_scale_list": [
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1241,
+    "SR_delta": 0.0,
+    "HB_replace": -1,
+    "Repainting_prompt": "A boy holding a soccer in one hand.",
+    "Repainting_SR_prompt": "A BREAK A (This case does not use SR.)",
+    "Repainting_HB_prompt": "Soccer",
+    "Repainting_mask": "data/Repainting_mask/mask_3.png",
+    "Repainting_HB_replace": 2,
+    "Repainting_seed": 133,
+    "Repainting_single": 0
+},
+{
+    "idx": 4,
+    "prompt": "A brown curly hair African woman in blue puffy skirt.",
+    "SR_hw_split_ratio": "1,1",
+    "SR_prompt": "A BREAK A (This case does not use SR.)",
+    "HB_prompt_list": [
+    ],
+    "HB_m_offset_list": [
+    ],
+    "HB_n_offset_list": [
+    ],
+    "HB_m_scale_list": [
+    ],
+    "HB_n_scale_list": [
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1236,
+    "SR_delta": 0.0,
+    "HB_replace": -1,
+    "Repainting_prompt": "A brown curly hair African woman in pink suit.",
+    "Repainting_SR_prompt": "A BREAK A (This case does not use SR.)",
+    "Repainting_HB_prompt": "Pink suit",
+    "Repainting_mask": "data/Repainting_mask/mask_4.png",
+    "Repainting_HB_replace": 2,
+    "Repainting_seed": 313,
+    "Repainting_single": 0
+},
+{
+    "idx": 5,
+    "prompt": "A man on the left, a woman on the right.",
+    "SR_hw_split_ratio": "1,1",
+    "SR_prompt": "Man BREAK Woman",
+    "HB_prompt_list": [
+        "Man",
+        "Woman"
+    ],
+    "HB_m_offset_list": [
+        0.05,
+        0.55
+    ],
+    "HB_n_offset_list": [
+        0.1,
+        0.1
+    ],
+    "HB_m_scale_list": [
+        0.4,
+        0.4
+    ],
+    "HB_n_scale_list": [
+        0.8,
+        0.8
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1238,
+    "SR_delta": 0.0,
+    "HB_replace": 3,
+    "Repainting_prompt": "A man on the left, an anime woman on the right.",
+    "Repainting_SR_prompt": "Man BREAK Anime woman",
+    "Repainting_HB_prompt": "Anime woman",
+    "Repainting_mask": "data/Repainting_mask/mask_5.png",
+    "Repainting_HB_replace": 3,
+    "Repainting_seed": 209,
+    "Repainting_single": 0
+},
+{
+    "idx": 6,
+    "prompt": "Four ceramic mugs in different colors are placed on a wooden table",
+    "SR_hw_split_ratio": "1,1,1,1",
+    "SR_prompt": "one red ceramic mug on a wooden table BREAK one orange ceramic mug on a wooden table BREAK one yellow ceramic mug on a wooden table BREAK one green ceramic mug on a wooden table",
+    "HB_prompt_list": [
+        "one red ceramic mug on a wooden table",
+        "one orange ceramic mug on a wooden table",
+        "one yellow ceramic mug on a wooden table",
+        "one green ceramic mug on a wooden table"
+    ],
+    "HB_m_offset_list": [
+        0.0,
+        0.25,
+        0.5,
+        0.75
+    ],
+    "HB_n_offset_list": [
+        0.2,
+        0.2,
+        0.2,
+        0.2
+    ],
+    "HB_m_scale_list": [
+        0.2,
+        0.2,
+        0.2,
+        0.2
+    ],
+    "HB_n_scale_list": [
+        0.6,
+        0.6,
+        0.6,
+        0.6
+    ],
+    "height": 1024,
+    "width": 1024,
+    "seed": 1236,
+    "SR_delta": 0.0,
+    "HB_replace": 2,
+    "Repainting_prompt": "Three ceramic mugs in different colors and a Starbucks cup are placed on a wooden table",
+    "Repainting_SR_prompt": "one red ceramic mug on a wooden table BREAK one orange ceramic mug on a wooden table BREAK one Starbucks cup on a wooden table BREAK one green ceramic mug on a wooden table",
+    "Repainting_HB_prompt": "Starbucks cup",
+    "Repainting_mask": "data/Repainting_mask/mask_6.png",
+    "Repainting_HB_replace": 3,
+    "Repainting_seed": 103,
+    "Repainting_single": 0
+}
+]

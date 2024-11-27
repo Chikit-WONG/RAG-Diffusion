@@ -41,6 +41,10 @@ from matrix import matrixdealer,keyconverter
 import random
 import importlib.util
 import sys
+import PIL
+from PIL import Image, ImageChops
+from scipy.ndimage import binary_dilation
+import torchvision.transforms as transforms
 
 module_name = 'diffusers.models.transformers.transformer_flux'
 module_path = './RAG_transformer_flux.py'
@@ -455,7 +459,7 @@ class RAG_FluxPipeline(
                 prompt=SR_prompt,
                 num_images_per_prompt=num_images_per_prompt,
                 max_sequence_length=max_sequence_length,
-                device = device,
+                device=device,
             )
             SR_prompt_embeds_list.append(SR_prompt_embeds)
 
@@ -606,6 +610,43 @@ class RAG_FluxPipeline(
         """
         self.vae.disable_tiling()
 
+    def prepare_Repainting(
+            self,
+            height,
+            width,
+            Repainting_mask,
+            device,
+    ):
+            binary_img = Repainting_mask.point(lambda p: 255 if p > 128 else 0)
+            Repainting_mask = binary_img.convert("1")
+
+            #Proper expansion of the mask area can achieve better fusion effect
+            Repainting_mask = np.array(Repainting_mask)
+            Repainting_mask = np.invert(Repainting_mask)
+            Repainting_mask = binary_dilation(Repainting_mask, iterations=10)
+            Repainting_mask = np.invert(Repainting_mask)
+            Repainting_mask = Image.fromarray(Repainting_mask.astype(np.uint8) * 255)
+
+            Repainting_mask = Repainting_mask.resize((width, height))
+            Repainting_mask = Repainting_mask.convert('1')
+            inverted_Repainting_mask = ImageChops.invert(Repainting_mask)
+            Repainting = transforms.ToTensor()(inverted_Repainting_mask).unsqueeze(0)
+            Repainting = torch.nn.functional.interpolate(Repainting, size=(height//16, width//16), mode='nearest-exact')
+
+            Repainting = Repainting.squeeze(0).squeeze(0)
+            Repainting[Repainting != 1] = 0
+            indices = torch.nonzero(Repainting==1, as_tuple=False)
+            min_row, min_col = torch.min(indices, dim=0)[0]
+            max_row, max_col = torch.max(indices, dim=0)[0]
+
+            Repainting_HB_m_offset = min_col
+            Repainting_HB_n_offset = min_row
+            Repainting = Repainting[min_row:max_row+1, min_col:max_col+1]
+            Repainting = Repainting.unsqueeze(0) 
+            Repainting = Repainting.to(device)
+            
+            return Repainting, Repainting_HB_m_offset, Repainting_HB_n_offset
+
     def prepare_latents(
         self,
         batch_size,
@@ -683,7 +724,7 @@ class RAG_FluxPipeline(
             HB_hidden_states_list_list = []
 
             for HB_prompt_embeds, HB_latents, HB_pooled_prompt_embeds, HB_text_ids,HB_latent_image_ids in zip(HB_prompt_embeds_list, HB_latents_list, HB_pooled_prompt_embeds_list, HB_text_ids_list, HB_latent_image_ids_list):
-                HB_noise_pred, HB_hidden_states_list = self.transformer.forward_hidden_states_list(
+                HB_noise_pred, HB_hidden_states_list = self.transformer(
                     hidden_states=HB_latents,
                     timestep=timestep / 1000,
                     guidance=guidance,
@@ -693,6 +734,7 @@ class RAG_FluxPipeline(
                     img_ids=HB_latent_image_ids,
                     joint_attention_kwargs=None,
                     return_dict=False,
+                    return_hidden_states_list=True,
                 )
                 HB_noise_pred_list.append(HB_noise_pred[0])
                 HB_hidden_states_list_list.append(HB_hidden_states_list)
@@ -715,13 +757,57 @@ class RAG_FluxPipeline(
         ]
 
         return HB_latents_list_list, HB_hidden_states_list_list_list
+    
+    def prepare_Repainting_HB_replace(
+        self, Repainting_HB_latents, timesteps, Repainting_HB_replace, latents, Repainting_HB_prompt_embeds, Repainting_HB_pooled_prompt_embeds, Repainting_HB_text_ids, Repainting_HB_latent_image_ids, guidance, Repainting
+    ):
+        for i, t in enumerate(timesteps):
+            if(i >= Repainting_HB_replace):
+                break
+
+            timestep = t.expand(latents.shape[0]).to(latents.dtype)
+
+            Repainting_HB_noise_pred = self.transformer(
+                hidden_states=Repainting_HB_latents,
+                timestep=timestep / 1000,
+                guidance=guidance,
+                pooled_projections=Repainting_HB_pooled_prompt_embeds,
+                encoder_hidden_states=Repainting_HB_prompt_embeds,
+                txt_ids=Repainting_HB_text_ids,
+                img_ids=Repainting_HB_latent_image_ids,
+                joint_attention_kwargs=None,
+                return_dict=False,
+            )[0]
+
+            self.scheduler._init_step_index(t)
+            Repainting_HB_latents = self.scheduler.step(Repainting_HB_noise_pred, t, Repainting_HB_latents, return_dict=False)[0]
+
+        Repainting_HB_latents = Repainting_HB_latents.view(Repainting_HB_latents.shape[0], Repainting.shape[1], Repainting.shape[2], Repainting_HB_latents.shape[2])
+
+        return Repainting_HB_latents
 
     def HB_replace_latents(self, latents, HB_latents_list, HB_m_offset_list, HB_n_offset_list, height, width):
         latents = latents.view(latents.shape[0], int(height//16), int(width//16), latents.shape[2])
         for HB_latents, HB_m_offset, HB_n_offset in zip(HB_latents_list, HB_m_offset_list, HB_n_offset_list):
-            latents[:, HB_n_offset:HB_n_offset + HB_latents.shape[1], HB_m_offset:HB_m_offset + HB_latents.shape[2],] = HB_latents
+            latents[:, HB_n_offset:HB_n_offset+HB_latents.shape[1], HB_m_offset:HB_m_offset+HB_latents.shape[2], ] = HB_latents
         latents = latents.view(latents.shape[0], latents.shape[1]*latents.shape[2], latents.shape[3])
+
         return latents
+    
+    def Repainting_HB_replace_latents(self, latents, Repainting_HB_latents, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, height, width):
+        Repainting_latents = latents.clone().view(latents.shape[0], int(height//16), int(width//16), latents.shape[2])
+        Repainting_latents[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting_HB_latents.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting_HB_latents.shape[2], ][Repainting == 1] = Repainting_HB_latents[Repainting == 1]
+        Repainting_latents = Repainting_latents.view(Repainting_latents.shape[0], latents.shape[1], Repainting_latents.shape[3])
+
+        return Repainting_latents
+    
+    def Repainting_replace_latents(self, latents, Repainting_latents, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, height, width):
+        Repainting_latents = Repainting_latents.view(Repainting_latents.shape[0], int(height//16), int(width//16), Repainting_latents.shape[2])
+        latents_clone = latents.clone().view(latents.shape[0], int(height//16), int(width//16), latents.shape[2])
+        latents_clone[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1] = Repainting_latents[:, Repainting_HB_n_offset:Repainting_HB_n_offset+Repainting.shape[1], Repainting_HB_m_offset:Repainting_HB_m_offset+Repainting.shape[2], :][Repainting == 1]
+        Repainting_latents = latents_clone.view(latents.shape[0], latents.shape[1], latents.shape[2])
+
+        return Repainting_latents
 
     @property
     def guidance_scale(self):
@@ -745,14 +831,28 @@ class RAG_FluxPipeline(
         self,
         SR_delta: float,
         SR_hw_split_ratio: str,
-        SR_prompt:str,
-        HB_prompt_list:List[str],
-        HB_m_offset_list:List[float],
-        HB_n_offset_list:List[float],
-        HB_m_scale_list:List[float],
-        HB_n_scale_list:List[float],
-        HB_replace:int,
-        seed:int,
+        SR_prompt: str,
+        HB_prompt_list: List[str],
+        HB_m_offset_list: List[float],
+        HB_n_offset_list: List[float],
+        HB_m_scale_list: List[float],
+        HB_n_scale_list: List[float],
+        HB_replace: int,
+        seed: int,
+        Repainting_mask: Union[
+            torch.FloatTensor,
+            PIL.Image.Image,
+            np.ndarray,
+            List[torch.FloatTensor],
+            List[PIL.Image.Image],
+            List[np.ndarray],
+        ] = None,
+        Repainting_prompt: str = None,
+        Repainting_SR_prompt: str = None,
+        Repainting_HB_prompt: str = None,
+        Repainting_HB_replace: int = None,
+        Repainting_seed: int = None,
+        Repainting_single: bool = None,
         prompt: Union[str, List[str]] = None,
         prompt_2: Optional[Union[str, List[str]]] = None,
         height: Optional[int] = None,
@@ -842,7 +942,7 @@ class RAG_FluxPipeline(
             images.
         """
 
-        self.SR_delta=SR_delta
+        self.SR_delta = SR_delta
         self.split_ratio = SR_hw_split_ratio
         self.SR_prompt = SR_prompt
         self.h = height
@@ -850,8 +950,10 @@ class RAG_FluxPipeline(
         self.regional_info(SR_prompt) 
         keyconverter(self,self.split_ratio, False)
         matrixdealer(self,self.split_ratio, 0.0)
+
         if (seed > 0):
-            self.torch_fix_seed(seed=seed)
+            self.torch_fix_seed(seed = seed)
+
         init_forwards(self, self.transformer)
 
         HB_m_offset_list = [int(HB_m_offset * width // 16) for HB_m_offset in HB_m_offset_list]
@@ -918,13 +1020,48 @@ class RAG_FluxPipeline(
             lora_scale=lora_scale,
         )
 
-        SR_prompt_embeds_list= self.SR_encode_prompt(
+        SR_prompt_embeds_list = self.SR_encode_prompt(
             prompt=SR_prompt,
             device=device,
             num_images_per_prompt=num_images_per_prompt,
             max_sequence_length=max_sequence_length,
             lora_scale=lora_scale,
         )
+
+        if Repainting_mask is not None:
+            (
+                Repainting_prompt_embeds,
+                Repainting_pooled_prompt_embeds,
+                Repainting_text_ids,
+            ) = self.encode_prompt(
+                prompt=Repainting_prompt,
+                prompt_2=prompt_2,
+                device=device,
+                num_images_per_prompt=num_images_per_prompt,
+                max_sequence_length=max_sequence_length,
+                lora_scale=lora_scale,
+            )
+
+            (
+                Repainting_HB_prompt_embeds,
+                Repainting_HB_pooled_prompt_embeds,
+                Repainting_HB_text_ids,
+            ) = self.encode_prompt(
+                prompt=Repainting_HB_prompt,
+                prompt_2=prompt_2,
+                device=device,
+                num_images_per_prompt=num_images_per_prompt,
+                max_sequence_length=max_sequence_length,
+                lora_scale=lora_scale,
+            )
+
+            Repainting_SR_prompt_embeds_list = self.SR_encode_prompt(
+                prompt=Repainting_SR_prompt,
+                device=device,
+                num_images_per_prompt=num_images_per_prompt,
+                max_sequence_length=max_sequence_length,
+                lora_scale=lora_scale,
+            )
 
         # 4. Prepare latent variables
         num_channels_latents = self.transformer.config.in_channels // 4
@@ -948,6 +1085,19 @@ class RAG_FluxPipeline(
             device,
             generator
         )
+
+        if Repainting_mask is not None:
+            Repainting, Repainting_HB_m_offset, Repainting_HB_n_offset = self.prepare_Repainting(height, width, Repainting_mask, device)
+
+            Repainting_HB_latents, Repainting_HB_latent_image_ids = self.prepare_latents(
+                batch_size * num_images_per_prompt,
+                num_channels_latents,
+                Repainting.shape[1]*16,
+                Repainting.shape[2]*16,
+                prompt_embeds.dtype,
+                device,
+                generator = torch.Generator(device=device).manual_seed(Repainting_seed)
+            )
 
         # 5. Prepare timesteps
         sigmas = np.linspace(1.0, 1 / num_inference_steps, num_inference_steps)
@@ -980,6 +1130,9 @@ class RAG_FluxPipeline(
         # 6. Denoising loop        
         HB_latents_list_list, HB_hidden_states_list_list_list = self.prepare_HB_replace(HB_latents_list, timesteps, HB_replace, latents, HB_prompt_embeds_list, HB_pooled_prompt_embeds_list, HB_text_ids_list, HB_latent_image_ids_list, guidance, HB_m_scale_list, HB_n_scale_list)
 
+        if Repainting_mask is not None:
+            Repainting_HB_latents = self.prepare_Repainting_HB_replace(Repainting_HB_latents, timesteps, Repainting_HB_replace, latents, Repainting_HB_prompt_embeds, Repainting_HB_pooled_prompt_embeds, Repainting_HB_text_ids, Repainting_HB_latent_image_ids, guidance, Repainting)
+
         hook_forwards(self, self.transformer)
         
         self.scheduler._init_step_index(timesteps[0])
@@ -991,44 +1144,106 @@ class RAG_FluxPipeline(
                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                 timestep = t.expand(latents.shape[0]).to(latents.dtype)
 
-                if(i<=HB_replace):                    
+                if i <= HB_replace :                    
                     latents = self.HB_replace_latents(latents, HB_latents_list_list[i], HB_m_offset_list, HB_n_offset_list, height, width)
 
-                self._joint_attention_kwargs = {"SR_encoder_hidden_states_list":SR_prompt_embeds_list, "SR_norm_encoder_hidden_states_list":None, "SR_hidden_states_list":None, "SR_norm_hidden_states_list":None}
+                if Repainting_mask is not None and i == Repainting_HB_replace: 
+                    Repainting_latents = self.Repainting_HB_replace_latents(latents, Repainting_HB_latents, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, height, width) 
+
+                self._joint_attention_kwargs = {"SR_encoder_hidden_states_list": SR_prompt_embeds_list, "SR_norm_encoder_hidden_states_list": None, "SR_hidden_states_list": None, "SR_norm_hidden_states_list": None}
 
                 if i < HB_replace:
-                    noise_pred = self.transformer(
-                        hidden_states=latents,
+                    if Repainting_mask is None or i < Repainting_HB_replace:
+                        noise_pred = self.transformer(
+                            hidden_states=latents,
+                            timestep=timestep / 1000,
+                            guidance=guidance,
+                            pooled_projections=pooled_prompt_embeds,
+                            encoder_hidden_states=prompt_embeds,
+                            txt_ids=text_ids,
+                            img_ids=latent_image_ids,
+                            joint_attention_kwargs=self.joint_attention_kwargs,
+                            return_dict=False,
+                            HB_hidden_states_list_list=HB_hidden_states_list_list_list[i],
+                            HB_m_offset_list=HB_m_offset_list,
+                            HB_n_offset_list=HB_n_offset_list,
+                            HB_m_scale_list=HB_m_scale_list,
+                            HB_n_scale_list=HB_n_scale_list,
+                            latent_h=height//16,
+                            latent_w=width//16
+                        )[0]
+                    else:
+                        noise_pred, original_hidden_states_list = self.transformer(
+                            hidden_states=latents,
+                            timestep=timestep / 1000,
+                            guidance=guidance,
+                            pooled_projections=pooled_prompt_embeds,
+                            encoder_hidden_states=prompt_embeds,
+                            txt_ids=text_ids,
+                            img_ids=latent_image_ids,
+                            joint_attention_kwargs=self.joint_attention_kwargs,
+                            return_dict=False,
+                            HB_hidden_states_list_list=HB_hidden_states_list_list_list[i],
+                            HB_m_offset_list=HB_m_offset_list,
+                            HB_n_offset_list=HB_n_offset_list,
+                            HB_m_scale_list=HB_m_scale_list,
+                            HB_n_scale_list=HB_n_scale_list,
+                            latent_h=height//16,
+                            latent_w=width//16,
+                            return_hidden_states_list=True
+                        )
+                        noise_pred = noise_pred[0]
+
+                if i >= HB_replace:
+                    if Repainting_mask is None or i < Repainting_HB_replace:
+                        noise_pred = self.transformer(
+                            hidden_states=latents,
+                            timestep=timestep / 1000,
+                            guidance=guidance,
+                            pooled_projections=pooled_prompt_embeds,
+                            encoder_hidden_states=prompt_embeds,
+                            txt_ids=text_ids,
+                            img_ids=latent_image_ids,
+                            joint_attention_kwargs=self.joint_attention_kwargs,
+                            return_dict=False,
+                        )[0]
+                    else:
+                        noise_pred, original_hidden_states_list = self.transformer(
+                            hidden_states=latents,
+                            timestep=timestep / 1000,
+                            guidance=guidance,
+                            pooled_projections=pooled_prompt_embeds,
+                            encoder_hidden_states=prompt_embeds,
+                            txt_ids=text_ids,
+                            img_ids=latent_image_ids,
+                            joint_attention_kwargs=self.joint_attention_kwargs,
+                            return_dict=False,
+                            return_hidden_states_list=True
+                        )
+                        noise_pred = noise_pred[0]
+
+                if Repainting_mask is not None and i >= Repainting_HB_replace:
+
+                    self._joint_attention_kwargs = {"SR_encoder_hidden_states_list": Repainting_SR_prompt_embeds_list, "SR_norm_encoder_hidden_states_list": None, "SR_hidden_states_list": None, "SR_norm_hidden_states_list": None}
+
+                    Repainting_noise_pred = self.transformer(
+                        hidden_states=Repainting_latents,
                         timestep=timestep / 1000,
                         guidance=guidance,
-                        pooled_projections=pooled_prompt_embeds,
-                        encoder_hidden_states=prompt_embeds,
-                        txt_ids=text_ids,
+                        pooled_projections=Repainting_pooled_prompt_embeds,
+                        encoder_hidden_states=Repainting_prompt_embeds,
+                        txt_ids=Repainting_text_ids,
                         img_ids=latent_image_ids,
                         joint_attention_kwargs=self.joint_attention_kwargs,
                         return_dict=False,
-                        HB_hidden_states_list_list=HB_hidden_states_list_list_list[i],
-                        HB_m_offset_list=HB_m_offset_list,
-                        HB_n_offset_list=HB_n_offset_list,
-                        HB_m_scale_list=HB_m_scale_list,
-                        HB_n_scale_list=HB_n_scale_list,
+                        original_hidden_states_list=original_hidden_states_list,
+                        Repainting_HB_m_offset=Repainting_HB_m_offset,
+                        Repainting_HB_n_offset=Repainting_HB_n_offset,
+                        Repainting=Repainting,
+                        Repainting_single=Repainting_single,
                         latent_h=height//16,
                         latent_w=width//16
                     )[0]
-
-                if i >= HB_replace:
-                    noise_pred = self.transformer(
-                        hidden_states=latents,
-                        timestep=timestep / 1000,
-                        guidance=guidance,
-                        pooled_projections=pooled_prompt_embeds,
-                        encoder_hidden_states=prompt_embeds,
-                        txt_ids=text_ids,
-                        img_ids=latent_image_ids,
-                        joint_attention_kwargs=self.joint_attention_kwargs,
-                        return_dict=False,
-                    )
-                    noise_pred = noise_pred[0]
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents_dtype = latents.dtype
@@ -1038,6 +1253,11 @@ class RAG_FluxPipeline(
                     if torch.backends.mps.is_available():
                         # some platforms (eg. apple mps) misbehave due to a pytorch bug: https://github.com/pytorch/pytorch/pull/99272
                         latents = latents.to(latents_dtype)
+
+                if Repainting_mask is not None and i >= Repainting_HB_replace:
+                    self.scheduler._init_step_index(t)
+                    Repainting_latents = self.scheduler.step(Repainting_noise_pred, t, Repainting_latents, return_dict=False)[0]
+                    Repainting_latents = self.Repainting_replace_latents(latents, Repainting_latents, Repainting_HB_m_offset, Repainting_HB_n_offset, Repainting, height, width)
 
                 if callback_on_step_end is not None:
                     callback_kwargs = {}
@@ -1064,10 +1284,18 @@ class RAG_FluxPipeline(
             image = self.vae.decode(latents, return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
 
+            if Repainting_mask is not None:
+                Repainting_latents = self._unpack_latents(Repainting_latents, height, width, self.vae_scale_factor)
+                Repainting_latents = (Repainting_latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
+                Repainting_image = self.vae.decode(Repainting_latents, return_dict=False)[0]
+                Repainting_image = self.image_processor.postprocess(Repainting_image, output_type=output_type)
+
         # Offload all models
         self.maybe_free_model_hooks()
 
         if not return_dict:
             return (image,)
 
+        if Repainting_mask is not None:
+            return FluxPipelineOutput(images=image),FluxPipelineOutput(images=Repainting_image)
         return FluxPipelineOutput(images=image)
