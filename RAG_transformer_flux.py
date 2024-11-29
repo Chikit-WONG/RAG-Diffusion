@@ -721,7 +721,7 @@ class FluxTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOrig
 
                     for HB_hidden_states_list, HB_m_offset, HB_n_offset, HB_m_scale,HB_n_scale in zip(HB_hidden_states_list_list, HB_m_offset_list, HB_n_offset_list, HB_m_scale_list, HB_n_scale_list):
                         HB_hidden_states = HB_hidden_states_list[HB_idx]
-                        HB_hidden_states = HB_hidden_states[:, encoder_hidden_states.shape[1] :, ...].view(HB_hidden_states.shape[0], HB_n_scale, HB_m_scale, HB_hidden_states.shape[2])
+                        HB_hidden_states = HB_hidden_states[:, HB_hidden_states.shape[1]-HB_n_scale*HB_m_scale :, ...].view(HB_hidden_states.shape[0], HB_n_scale, HB_m_scale, HB_hidden_states.shape[2])
                         hidden_states_clone[:, HB_n_offset:HB_n_offset+HB_n_scale,HB_m_offset:HB_m_offset+HB_m_scale, :] = HB_hidden_states
 
                     hidden_states_clone = hidden_states_clone.view(hidden_states.shape[0], latent_h*latent_w, hidden_states.shape[2])

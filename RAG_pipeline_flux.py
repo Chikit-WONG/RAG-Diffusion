@@ -399,7 +399,8 @@ class RAG_FluxPipeline(
     
     def HB_encode_prompt(
         self,
-        HB_prompt_list: Union[List[str]],
+        HB_prompt_list: None,
+        Redux_list: None,
         device: Optional[torch.device] = None,
         num_images_per_prompt: int = 1,
         max_sequence_length: int = 512,
@@ -409,23 +410,42 @@ class RAG_FluxPipeline(
         HB_pooled_prompt_embeds_list = []
         HB_text_ids_list = []
 
-        for HB_prompt in HB_prompt_list:
-            (
-                HB_prompt_embeds,
-                HB_pooled_prompt_embeds,
-                HB_text_ids,
-            ) = self.encode_prompt(
-                prompt=HB_prompt,
-                prompt_2=None,
-                device=device,
-                num_images_per_prompt=num_images_per_prompt,
-                max_sequence_length=max_sequence_length,
-                lora_scale=lora_scale,
-            )
+        if Redux_list is not None:
+            for Redux in Redux_list:
+                (
+                    HB_prompt_embeds,
+                    HB_pooled_prompt_embeds,
+                    HB_text_ids,
+                ) = self.encode_prompt(
+                    **Redux,
+                    prompt=None,
+                    prompt_2=None,
+                    device=device,
+                    num_images_per_prompt=num_images_per_prompt,
+                    max_sequence_length=max_sequence_length,
+                    lora_scale=lora_scale,
+                )   
+                HB_prompt_embeds_list.append(HB_prompt_embeds)
+                HB_pooled_prompt_embeds_list.append(HB_pooled_prompt_embeds)
+                HB_text_ids_list.append(HB_text_ids)     
+        else:    
+            for HB_prompt in HB_prompt_list:
+                (
+                    HB_prompt_embeds,
+                    HB_pooled_prompt_embeds,
+                    HB_text_ids,
+                ) = self.encode_prompt(
+                    prompt=HB_prompt,
+                    prompt_2=None,
+                    device=device,
+                    num_images_per_prompt=num_images_per_prompt,
+                    max_sequence_length=max_sequence_length,
+                    lora_scale=lora_scale,
+                )
 
-            HB_prompt_embeds_list.append(HB_prompt_embeds)
-            HB_pooled_prompt_embeds_list.append(HB_pooled_prompt_embeds)
-            HB_text_ids_list.append(HB_text_ids)
+                HB_prompt_embeds_list.append(HB_prompt_embeds)
+                HB_pooled_prompt_embeds_list.append(HB_pooled_prompt_embeds)
+                HB_text_ids_list.append(HB_text_ids)
 
         return HB_prompt_embeds_list, HB_pooled_prompt_embeds_list, HB_text_ids_list
 
@@ -832,13 +852,14 @@ class RAG_FluxPipeline(
         SR_delta: float,
         SR_hw_split_ratio: str,
         SR_prompt: str,
-        HB_prompt_list: List[str],
         HB_m_offset_list: List[float],
         HB_n_offset_list: List[float],
         HB_m_scale_list: List[float],
         HB_n_scale_list: List[float],
         HB_replace: int,
         seed: int,
+        HB_prompt_list: List[str]=None,
+        Redux_list = None,
         Repainting_mask: Union[
             torch.FloatTensor,
             PIL.Image.Image,
@@ -1014,6 +1035,7 @@ class RAG_FluxPipeline(
             HB_text_ids_list,
         ) = self.HB_encode_prompt(
             HB_prompt_list=HB_prompt_list,
+            Redux_list=Redux_list,
             device=device,
             num_images_per_prompt=num_images_per_prompt,
             max_sequence_length=max_sequence_length,

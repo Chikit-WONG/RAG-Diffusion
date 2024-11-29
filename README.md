@@ -19,6 +19,7 @@
 We present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method conditioned on regional descriptions for precise layout composition. Regional prompting, or compositional generation, which enables fine-grained spatial control, has gained increasing attention for its practicality in real-world applications. However, previous methods either introduce additional trainable modules, thus only applicable to specific models, or manipulate on score maps within cross-attention layers using attention masks, resulting in limited control strength when the number of regions increases. To handle these limitations, we decouple the multi-region generation into two sub-tasks, the construction of individual region (**Regional Hard Binding**) that ensures the regional prompt is properly executed, and the overall detail refinement (**Regional Soft Refinement**) over regions that dismiss the visual boundaries and enhance adjacent interactions. Furthermore, RAG novelly makes repainting feasible, where users can modify specific unsatisfied regions in the last generation while keeping all other regions unchanged, without relying on additional inpainting models. Our approach is tuning-free and applicable to other frameworks as an enhancement to the prompt following property. Quantitative and qualitative experiments demonstrate that RAG achieves superior performance over attribute binding and object relationship than previous tuning-free methods. 
 
 ## News ##
+- **2024.11.29**: 🎯 RAG-Diffusion now supports [**FLUX.1 Redux**](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev)!
 - **2024.11.27**: 📢 Repainting code is released.
 - **2024.11.20**: 👉 RAG Online Demo is Live. Try it now! ([**Link**](https://huggingface.co/spaces/NJU/RAG-Diffusion))
 - **2024.11.12**: 🚀 Our code and technical report are released.
@@ -445,7 +446,135 @@ Repainting prompt: "Three ceramic mugs in different colors and a Starbucks cup a
 </table>
 </details>
 
-### 3. RAG With LoRA
+### 3. RAG With FLUX.1 Redux
+```python
+from RAG_pipeline_flux import RAG_FluxPipeline
+from diffusers import FluxPriorReduxPipeline
+from diffusers.utils import load_image
+import torch
+import argparse
+import json
+
+pipe = RAG_FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16).to("cuda")
+pipe_prior_redux = FluxPriorReduxPipeline.from_pretrained("black-forest-labs/FLUX.1-Redux-dev", torch_dtype=torch.bfloat16).to("cuda")
+
+prompt = "A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says flux-redux."
+HB_replace = 8
+HB_m_offset_list = [
+        0.05,
+        0.55
+    ]
+HB_n_offset_list = [
+        0.2,
+        0.2
+    ]
+HB_m_scale_list = [
+        0.4,
+        0.4
+    ]
+HB_n_scale_list = [
+        0.4,
+        0.4
+    ]
+SR_delta = 0.2
+SR_hw_split_ratio = "0.5,0.5"
+SR_prompt = "A man is holding a sign that says RAG-Diffusion BREAK another man is holding a sign that says flux-redux."
+height = 1024
+width = 1024
+seed = 2272
+Redux_list = [
+        "data/Redux/Lecun.jpg",
+        "data/Redux/Hinton.jpg"
+    ]
+Redux_list = [pipe_prior_redux(load_image(Redux)) for Redux in Redux_list]
+del pipe_prior_redux
+torch.cuda.empty_cache()
+
+
+image = pipe(
+    SR_delta = SR_delta,
+    SR_hw_split_ratio = SR_hw_split_ratio,
+    SR_prompt = SR_prompt,
+    HB_m_offset_list = HB_m_offset_list,
+    HB_n_offset_list = HB_n_offset_list,
+    HB_m_scale_list = HB_m_scale_list,
+    HB_n_scale_list = HB_n_scale_list,
+    Redux_list = Redux_list,
+    HB_replace = HB_replace,
+    seed = seed,
+    prompt = prompt, height=height, width=width, num_inference_steps=20, guidance_scale=3.5
+    )
+
+image.images[0].save("RAG_with_Redux.png")
+```
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/Skeleton.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/Dragon.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/Redux_image/redux_idx0.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">The left side is a skeleton with fire, and the right side is an ice dragon</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=0</pre>
+      </td>
+    </tr>
+</table>
+
+<!-- <table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/Lecun.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/Hinton.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/Redux_image/redux_idx1.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says flux-redux.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=1</pre>
+      </td>
+    </tr>
+</table> -->
+
+<table class="center">
+    <tr>
+        <td width="12.5%" style="border: none"><img src="assets/pictures/Redux_image/cup1.jpg"></td>
+        <td width="12.5%" style="border: none"><img src="assets/pictures/Redux_image/cup2.jpg"></td>
+        <td width="12.5%" style="border: none"><img src="assets/pictures/Redux_image/cup3.jpg"></td>
+        <td width="12.5%" style="border: none"><img src="assets/pictures/Redux_image/cup4.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/Redux_image/redux_idx2.png"></td>
+    </tr>
+    <tr>
+        <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="5">Four ceramic mugs are placed on a wooden table</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="5">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=2</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/style1.png"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/Redux_image/style2.png"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/Redux_image/redux_idx3.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">Two women in an illustration style.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=3</pre>
+      </td>
+    </tr>
+</table>
+
+### 4. RAG With LoRA
 ```python
 import torch
 from RAG_pipeline_flux import RAG_FluxPipeline

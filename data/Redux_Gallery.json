@@ -1,0 +1,150 @@
+[
+    {
+        "idx": 0,
+        "prompt": "The left side is a skeleton with fire, and the right side is an ice dragon",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A skeleton, on the left, its bones charred and glowing with fiery embers, as flames dance around it, casting a warm yet eerie light. BREAK An ice dragon, on the right, majestic and ethereal, its scales shimmering with frosty light, exuding an aura of cold and power.",
+        "HB_prompt_list": [
+            "a skeleton with fire",
+            "an ice dragon"
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.0,
+            0.0
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            1,
+            1
+        ],
+        "Redux_list": [
+            "data/Redux/Skeleton.jpg",
+            "data/Redux/Dragon.jpg"
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1234,
+        "SR_delta": 0.8,
+        "HB_replace": 5
+    },
+    {
+        "idx": 1,
+        "prompt": "A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says flux-redux.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A man is holding a sign that says RAG-Diffusion BREAK another man is holding a sign that says flux-redux.",
+        "HB_prompt_list": [
+            "A man is holding a sign that says RAG-Diffusion",
+            "another man is holding a sign that says flux-redux."
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.4,
+            0.4
+        ],
+        "Redux_list": [
+            "data/Redux/Lecun.jpg",
+            "data/Redux/Hinton.jpg"
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 2272,
+        "SR_delta": 0.2,
+        "HB_replace": 8
+    },
+    {
+        "idx": 2,
+        "prompt": "Four ceramic mugs are placed on a wooden table",
+        "SR_hw_split_ratio": "1,1,1,1",
+        "SR_prompt": "one ceramic mug on a wooden table BREAK one ceramic mug on a wooden table BREAK one ceramic mug on a wooden table BREAK one ceramic mug on a wooden table",
+        "HB_prompt_list": [
+            "one ceramic mug",
+            "one ceramic mug",
+            "one ceramic mug",
+            "one ceramic mug"
+        ],
+        "HB_m_offset_list": [
+            0.0,
+            0.25,
+            0.5,
+            0.75
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2,
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.2,
+            0.2,
+            0.2,
+            0.2
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6,
+            0.6,
+            0.6
+        ],
+        "Redux_list": [
+            "data/Redux/cup1.jpg",
+            "data/Redux/cup2.jpg",
+            "data/Redux/cup3.jpg",
+            "data/Redux/cup4.jpg"
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1460,
+        "SR_delta": 1.0,
+        "HB_replace": 5
+    },
+    {
+        "idx": 4,
+        "prompt": "Two women in an illustration style.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A woman in an illustration style. BREAK A woman in an illustration style.",
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.4,
+            0.4
+        ],
+        "Redux_list": [
+            "data/Redux/style1.png",
+            "data/Redux/style2.png"
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1217,
+        "SR_delta": 0.0,
+        "HB_replace": 4
+    }
+]
