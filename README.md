@@ -773,10 +773,8 @@ images = ip_model.generate(
     seed=seed,
     num_inference_steps=20,
     guidance_scale=3.5,
-    
     pil_image=id_images,
     scale=id_weights,
-
     SR_delta=SR_delta,
     SR_hw_split_ratio=SR_hw_split_ratio,
     SR_prompt=SR_prompt,
