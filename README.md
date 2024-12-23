@@ -19,6 +19,7 @@
 We present **RAG**, a **R**egional-**A**ware text-to-image **G**eneration method conditioned on regional descriptions for precise layout composition. Regional prompting, or compositional generation, which enables fine-grained spatial control, has gained increasing attention for its practicality in real-world applications. However, previous methods either introduce additional trainable modules, thus only applicable to specific models, or manipulate on score maps within cross-attention layers using attention masks, resulting in limited control strength when the number of regions increases. To handle these limitations, we decouple the multi-region generation into two sub-tasks, the construction of individual region (**Regional Hard Binding**) that ensures the regional prompt is properly executed, and the overall detail refinement (**Regional Soft Refinement**) over regions that dismiss the visual boundaries and enhance adjacent interactions. Furthermore, RAG novelly makes repainting feasible, where users can modify specific unsatisfied regions in the last generation while keeping all other regions unchanged, without relying on additional inpainting models. Our approach is tuning-free and applicable to other frameworks as an enhancement to the prompt following property. Quantitative and qualitative experiments demonstrate that RAG achieves superior performance over attribute binding and object relationship than previous tuning-free methods. 
 
 ## News ##
+- **2024.12.23**: 🍎 RAG-Diffusion now supports [**FLUX.1-dev-IP-Adapter**](https://huggingface.co/InstantX/FLUX.1-dev-IP-Adapter) and [**PuLID**](https://github.com/ToTheBeginning/PuLID)!
 - **2024.11.29**: 🎯 RAG-Diffusion now supports [**FLUX.1 Redux**](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev)!
 - **2024.11.27**: 📢 Repainting code is released.
 - **2024.11.20**: 👉 RAG Online Demo is Live. Try it now! ([**Link**](https://huggingface.co/spaces/NJU/RAG-Diffusion))
@@ -574,7 +575,271 @@ image.images[0].save("RAG_with_Redux.png")
     </tr>
 </table>
 
-### 4. RAG With LoRA
+### 4. RAG With PuLID
+
+**Note:** If you want to use RAG with PuLID, please install the following packages first
+```bash
+pip install timm einops ftfy facexlib insightface onnxruntime torchsde 
+```
+
+
+```python
+import torch
+import argparse
+import json
+from RAG_pipeline_flux_PuLID import RAG_FluxPipeline
+
+pipe = RAG_FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16).to("cuda")
+pipe.load_pulid_models()
+pipe.load_pretrain()
+
+prompt = "A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says PuLID."
+HB_replace = 2
+HB_prompt_list =  [
+    "A man is holding a sign that says RAG-Diffusion",
+    "another man is holding a sign that says PuLID."
+]
+HB_m_offset_list =  [
+        0.05,
+        0.55
+    ]
+HB_n_offset_list =  [
+        0.2,
+        0.2
+    ]
+HB_m_scale_list =  [
+        0.4,
+        0.4
+    ]
+HB_n_scale_list = [
+        0.6,
+        0.6
+    ]
+SR_delta = 0.1
+SR_hw_split_ratio = "0.5, 0.5"
+SR_prompt = "A man is holding a sign that says RAG-Diffusion BREAK another man is holding a sign that says PuLID."
+height, width = 1024, 1024
+seed = 2272
+
+id_images_path = ["./data/Skeleton.jpg", "./data/Lecun.jpg"]
+id_weights = [1.0, 1.0]
+
+image = pipe(
+    SR_delta=SR_delta,
+    SR_hw_split_ratio=SR_hw_split_ratio,
+    SR_prompt=SR_prompt,
+    HB_prompt_list=HB_prompt_list,
+    HB_m_offset_list=HB_m_offset_list,
+    HB_n_offset_list=HB_n_offset_list,
+    HB_m_scale_list=HB_m_scale_list,
+    HB_n_scale_list=HB_n_scale_list,
+    HB_replace=HB_replace,
+    seed=seed,
+    prompt=prompt,
+    height=height,
+    width=width,
+    num_inference_steps=20,
+    guidance_scale=3.5,
+    id_images_path=id_images_path,
+    id_weights=id_weights
+).images[0]
+
+filename = "./RAG_with_PuLID.png"
+image.save(filename)
+print(f"Image saved as {filename}")
+```
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/Skeleton.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/Lecun.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/PuLID-idx0.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says PuLID.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_PuLID.py --idx=0</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/altman.png"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/lifeifei.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/PuLID-idx1.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">On the left is a man in a space suit and on the right is an elf woman in a dress.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_PuLID.py --idx=1</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/musk.png"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/trump.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/PuLID-idx2.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">A man in a suit and another man in a suit are shaking hands.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_PuLID.py --idx=2</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="16.5%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/hinton.jpeg"></td>
+        <td width="16.5%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/Lecun.jpg"></td>
+        <td width="16.5%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/bengio.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/PuLID-idx3.png"></td>
+    </tr>
+    <tr>
+        <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="5">Three men in suits stood in a line.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="5">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=3</pre>
+      </td>
+    </tr>
+</table>
+
+### 5. RAG With FLUX.1-dev-IP-Adapter
+```python
+import json
+import argparse
+from PIL import Image
+import torch
+from RAG_pipeline_flux_IP_Adapter import RAG_FluxPipeline
+from IP_Adapter import IPAdapter, resize_img
+
+pipe = RAG_FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16).to("cuda")
+
+image_encoder_path = "google/siglip-so400m-patch14-384"
+ipadapter_path = "./ip-adapter.bin" # you need to download this file at "https://huggingface.co/InstantX/FLUX.1-dev-IP-Adapter/tree/main"
+ip_model = IPAdapter(pipe, image_encoder_path, ipadapter_path, device="cuda", num_tokens=128)
+
+prompt = "On the left a man with fire and on the right is a strong man with a sword."
+HB_replace = 2
+HB_prompt_list =  [
+    "a man with fire",
+    "a strong man with a sword"
+]
+HB_m_offset_list =  [
+        0.05,
+        0.55
+    ]
+HB_n_offset_list =  [
+        0.2,
+        0.2
+    ]
+HB_m_scale_list =  [
+        0.4,
+        0.4
+    ]
+HB_n_scale_list = [
+        0.6,
+        0.6
+    ]
+SR_delta = 0.1
+SR_hw_split_ratio = "0.5, 0.5"
+SR_prompt = "a man with fire BREAK a strong man with a sword"
+height, width = 1024, 1024
+seed = 2438
+
+id_images_path = ["./data/Skeleton.jpg", "./data/strong.png"]
+id_weights = [0.8, 0.8]
+id_images = []
+
+for id_image in id_images_path:
+    image = Image.open(id_image).convert("RGB")
+    image = resize_img(image)
+    id_images.append(image)
+
+images = ip_model.generate(
+    prompt=prompt,
+    width=width,
+    height=height,
+    seed=seed,
+    num_inference_steps=20,
+    guidance_scale=3.5,
+    
+    pil_image=id_images,
+    scale=id_weights,
+
+    SR_delta=SR_delta,
+    SR_hw_split_ratio=SR_hw_split_ratio,
+    SR_prompt=SR_prompt,
+    HB_prompt_list=HB_prompt_list,
+    HB_m_offset_list=HB_m_offset_list,
+    HB_n_offset_list=HB_n_offset_list,
+    HB_m_scale_list=HB_m_scale_list,
+    HB_n_scale_list=HB_n_scale_list,
+    HB_replace=HB_replace
+)
+
+images[0].save(f"./RAG_with_IPAdapter.png")
+```
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/Skeleton.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/strong.png"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/IP-Adapter-idx0.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">On the left a man with fire and on the right is a strong man with a sword.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_IP_Adapter.py --idx=0</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/Dragon.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/miku.png"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/IP-Adapter-idx1.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">On the left is an ice dragon and on the right is a girl is riding a horse.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_IP_Adapter.py --idx=1</pre>
+      </td>
+    </tr>
+</table>
+
+<table class="center">
+    <tr>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/keli.jpg"></td>
+        <td width="25%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/ganyu.jpg"></td>
+        <td width="50%" style="border: none"><img src="assets/pictures/IP-Adapter-PuLID/IP-Adapter-idx2.png"></td>
+    </tr>
+    <tr>
+        <td width="25%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">The two girls took a selfie for the camera.</td>
+    </tr>
+    <tr>
+      <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="3">
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_IP_Adapter.py --idx=2</pre>
+      </td>
+    </tr>
+</table>
+
+### 6. RAG With LoRA
 ```python
 import torch
 from RAG_pipeline_flux import RAG_FluxPipeline
@@ -733,6 +998,7 @@ image.save(filename)
 
 
 # 📖BibTeX
+If you find this work useful for your research and applications, please cite us using this BibTeX:
 ```
 @article{chen2024region,
   title={Region-Aware Text-to-Image Generation via Hard Binding and Soft Refinement},
@@ -741,3 +1007,4 @@ image.save(filename)
   year={2024}
 }
 ```
+For any question, please feel free to contact me via znchen@smail.nju.edu.cn.
