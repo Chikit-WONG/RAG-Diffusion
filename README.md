@@ -577,7 +577,7 @@ image.images[0].save("RAG_with_Redux.png")
 
 ### 4. RAG With PuLID
 
-**Note:** If you want to use RAG with PuLID, please install the following packages first
+**Note.** If you want to use RAG with PuLID, please install the following packages first:
 ```bash
 pip install timm einops ftfy facexlib insightface onnxruntime torchsde 
 ```
