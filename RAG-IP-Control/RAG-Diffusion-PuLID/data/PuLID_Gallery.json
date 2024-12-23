@@ -1,0 +1,143 @@
+[
+    {
+        "idx": 0,
+        "prompt": "A man is holding a sign that says RAG-Diffusion, and another man is holding a sign that says PuLID.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A man is holding a sign that says RAG-Diffusion BREAK another man is holding a sign that says PuLID.",
+        "HB_prompt_list": [
+            "A man is holding a sign that says RAG-Diffusion",
+            "another man is holding a sign that says PuLID."
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 2272,
+        "SR_delta": 0.1,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/Skeleton.jpg", "./data/Lecun.jpg"],
+        "id_weights": [1.0, 1.0]
+    },
+    {
+        "idx": 1,
+        "prompt": "On the left is a man in a space suit and on the right is an elf woman in a dress.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "a man in a space suit BREAK another an elf woman in a dress.",
+        "HB_prompt_list": [
+            "a man in a space suit",
+            "an elf woman in a wedding dress"
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1149,
+        "SR_delta": 0.2,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/altman.png", "./data/lifeifei.jpg"],
+        "id_weights": [1.0, 1.0]
+    },
+    {
+        "idx": 2,
+        "prompt": "A man in a suit and another man in a suit are shaking hands",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A man in a suit BREAK another man in a suit",
+        "HB_prompt_list": [
+            "A man in a suit ",
+            "another man in a suit ."
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1001,
+        "SR_delta": 0.1,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/musk.png", "./data/trump.jpg"],
+        "id_weights": [1.0, 1.0]
+    },
+    {
+        "idx": 3,
+        "prompt": "Three men in suits stood in a line.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "a man in suit BREAK a man in suit BREAK a man in suit.",
+        "HB_prompt_list": [
+            "a man in suit",
+            "a man in suit",
+            "a man in suit"
+        ],
+        "HB_m_offset_list": [
+            0.02,
+            0.35,
+            0.68
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.28,
+            0.28,
+            0.28
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6,
+            0.6
+        ],
+        "height": 768,
+        "width": 1024,
+        "seed": 1702,
+        "SR_delta": 0.2,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/hinton.jpeg", "./data/Lecun.jpg", "./data/bengio.jpg"],
+        "id_weights": [1.0, 1.0, 1.0]
+    }
+]
