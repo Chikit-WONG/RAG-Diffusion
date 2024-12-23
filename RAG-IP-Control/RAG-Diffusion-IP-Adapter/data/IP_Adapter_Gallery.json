@@ -1,0 +1,104 @@
+[
+    {
+        "idx": 0,
+        "prompt": "On the left a man with fire and on the right is a strong man with a sword.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "a man with fire BREAK a strong man with a sword",
+        "HB_prompt_list": [
+            "a man with fire",
+            "a strong man with a sword"
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 2438,
+        "SR_delta": 0.1,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/Skeleton.jpg", "./data/strong.png"],
+        "id_weights": [0.8, 0.8]
+    },
+    {
+        "idx": 1,
+        "prompt": "On the left is an ice dragon and on the right is a girl is riding a horse.",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "an ice dragon BREAK another a girl is riding a horse.",
+        "HB_prompt_list": [
+            "an ice dragon",
+            "a girl is riding a horse"
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1191,
+        "SR_delta": 0.2,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/Dragon.jpg", "./data/miku.png"],
+        "id_weights": [0.8, 0.8]
+    },
+    {
+        "idx": 2,
+        "prompt": "The two girls took a selfie for the camera",
+        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_prompt": "A girl takes a selfie for the camera BREAK A girl takes a selfie for the camera.",
+        "HB_prompt_list": [
+            "A girl takes a selfie for the camera",
+            "A girl takes a selfie for the camera"
+        ],
+        "HB_m_offset_list": [
+            0.05,
+            0.55
+        ],
+        "HB_n_offset_list": [
+            0.2,
+            0.2
+        ],
+        "HB_m_scale_list": [
+            0.4,
+            0.4
+        ],
+        "HB_n_scale_list": [
+            0.6,
+            0.6
+        ],
+        "height": 1024,
+        "width": 1024,
+        "seed": 1790,
+        "SR_delta": 0.1,
+        "HB_replace": 2,
+
+        "id_images_path": ["./data/keli.jpg", "./data/ganyu.jpg"],
+        "id_weights": [0.8, 0.8]
+    }
+]
