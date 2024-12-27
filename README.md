@@ -709,7 +709,7 @@ print(f"Image saved as {filename}")
     </tr>
     <tr>
       <td width="100%" style="border: none; text-align: center; word-wrap: break-word" colspan="5">
-        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_Redux.py --idx=3</pre>
+        <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-family: Consolas, monospace; font-size: 16px; display: inline-block;">python RAG_with_PuLID.py --idx=3</pre>
       </td>
     </tr>
 </table>
