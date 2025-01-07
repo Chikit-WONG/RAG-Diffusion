@@ -104,7 +104,7 @@
     {
         "idx": 3,
         "prompt": "Three men in suits stood in a line.",
-        "SR_hw_split_ratio": "0.5,0.5",
+        "SR_hw_split_ratio": "0.33,0.34,0.33",
         "SR_prompt": "a man in suit BREAK a man in suit BREAK a man in suit.",
         "HB_prompt_list": [
             "a man in suit",
