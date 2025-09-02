@@ -7,8 +7,14 @@ pipe = pipe.to("cuda")
 
 prompt = "A small elephant on the left and a huge rabbit on the right."
 
-para_dict = GPT4(prompt,key='')
+# para_dict = GPT4(prompt,key='')
+para_dict = local_llm(prompt, model_path='../Qwen2.5-VL/models/Qwen2.5-VL-7B-Instruct')
+print('-------------------------------------')
+print('Model out put:')
+print(type(para_dict))
+print()
 print(para_dict)
+print('-------------------------------------')
 
 HB_replace = 2
 HB_prompt_list =  para_dict["HB_prompt_list"]

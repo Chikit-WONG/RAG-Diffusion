@@ -105,24 +105,192 @@ def get_params_dict(output_text):
     image_region_dict = {'SR_hw_split_ratio': SR_hw_split_ratio, 'SR_prompt': SR_prompt, 'HB_prompt_list': HB_prompt_list, 'HB_m_offset_list': HB_m_offset_list, 'HB_n_offset_list': HB_n_offset_list, 'HB_m_scale_list': HB_m_scale_list, 'HB_n_scale_list': HB_n_scale_list}
     return image_region_dict
 
-def local_llm(prompt,model_path=None):
-    if model_path==None:
-        model_id = "Llama-2-13b-chat-hf" 
-    else:
-        model_id=model_path
-    print('Using model:',model_id)
-    tokenizer = LlamaTokenizer.from_pretrained(model_id)
-    model = LlamaForCausalLM.from_pretrained(model_id, load_in_8bit=False, device_map='auto', torch_dtype=torch.float16)
+# def local_llm(prompt,model_path=None):
+#     if model_path==None:
+#         model_id = "Llama-2-13b-chat-hf" 
+#     else:
+#         model_id=model_path
+#     print('Using model:',model_id)
+#     tokenizer = LlamaTokenizer.from_pretrained(model_id)
+#     model = LlamaForCausalLM.from_pretrained(model_id, load_in_8bit=False, device_map='auto', torch_dtype=torch.float16)
+#     with open('./data/RAG_template.txt', 'r') as f:
+#         template=f.readlines()
+#     user_textprompt=f"Caption:{prompt} \n Let's think step by step:"
+#     textprompt= f"{' '.join(template)} \n {user_textprompt}"
+#     model_input = tokenizer(textprompt, return_tensors="pt").to("cuda")
+#     model.eval()
+#     with torch.no_grad():
+#         print('waiting for LLM response')
+#         res = model.generate(**model_input, max_new_tokens=4096)[0]
+#         output=tokenizer.decode(res, skip_special_tokens=True)
+#         output = output.replace(textprompt,'')
+#     return get_params_dict(output)
+#     # return output
+
+# from transformers import AutoTokenizer, AutoModelForCausalLM
+# import torch, json, os
+
+# def local_llm(prompt, model_path=None):
+#     model_id = model_path or "Llama-2-13b-chat-hf"
+#     print("Using model:", model_id)
+
+#     # 若固定用 LLaMA，可换回 LlamaTokenizer/LlamaForCausalLM
+#     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+#     model = AutoModelForCausalLM.from_pretrained(
+#         model_id,
+#         device_map="auto",
+#         torch_dtype=torch.float16,  # 或 "auto"/bfloat16
+#         trust_remote_code=True
+#     ).eval()
+
+#     with open("./data/RAG_template.txt", "r", encoding="utf-8") as f:
+#         template = " ".join(f.readlines()).strip()
+
+#     user_text = f"Caption: {prompt}\nOnly return a valid JSON for parameters.\n"
+#     textprompt = f"{template}\n{user_text}"
+
+#     inputs = tokenizer(textprompt, return_tensors="pt").to(model.device)
+#     max_ctx = getattr(model.config, "max_position_embeddings", 4096)
+#     max_new = max(64, min(1024, max_ctx - inputs["input_ids"].shape[-1] - 16))
+
+#     with torch.no_grad():
+#         print("waiting for LLM response")
+#         out = model.generate(
+#             **inputs,
+#             max_new_tokens=max_new,
+#             temperature=0.2,
+#             top_p=0.9,
+#             repetition_penalty=1.05,
+#             eos_token_id=tokenizer.eos_token_id,
+#             pad_token_id=tokenizer.eos_token_id,
+#         )
+#         seq = out[0]
+#         gen_ids = seq[inputs["input_ids"].shape[-1]:]
+#         text = tokenizer.decode(gen_ids, skip_special_tokens=True).strip()
+
+#     # 建议在 get_params_dict 之前先尝试 json 解析
+#     try:
+#         data = json.loads(text)
+#     except Exception:
+#         data = get_params_dict(text)  # 与现有逻辑兼容
+
+#     return data
+
+# from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+# from qwen_vl_utils import process_vision_info
+# import torch
+# import json
+
+# def local_llm(prompt, model_path=None, image_path=None):
+#     model_id = model_path or "Qwen2.5-VL-7B-Instruct"  # 使用 Qwen2.5-VL 模型路径，默认路径为 Qwen2.5-VL-7B-Instruct
+#     print("Using model:", model_id)
+
+#     # 加载 Qwen2.5-VL 模型和处理器
+#     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+#         model_id, torch_dtype="auto", device_map="auto", trust_remote_code=True
+#     ).eval()
+
+#     processor = AutoProcessor.from_pretrained(model_id, use_fast=True)
+
+#     # 处理用户输入的文本
+#     text = f"Caption: {prompt}\nOnly return a valid JSON for parameters.\n"
+
+#     # 如果有图像输入，处理图像
+#     if image_path:
+#         image_inputs, video_inputs = process_vision_info([{"role": "user", "content": [{"type": "image", "image": image_path}, {"type": "text", "text": prompt}]}])
+#     else:
+#         image_inputs, video_inputs = None, None
+
+#     # 将文本和图像输入转换为模型的输入格式
+#     inputs = processor(
+#         text=[text],
+#         images=image_inputs,
+#         videos=video_inputs,
+#         padding=True,
+#         return_tensors="pt",
+#     )
+
+#     inputs = inputs.to("cuda")
+
+#     # 推理：生成输出
+#     with torch.no_grad():
+#         print("Waiting for LLM response...")
+#         generated_ids = model.generate(**inputs, max_new_tokens=128)
+
+#     # 提取生成的文本（去除输入的部分）
+#     generated_ids_trimmed = [
+#         out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+#     ]
+#     output_text = processor.batch_decode(
+#         generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+#     )
+#     print("Generated text:", output_text)
+
+#     # 将生成的文本尝试解析为 JSON，若失败，则返回原始输出
+#     try:
+#         data = json.loads(output_text[0])  # 假设是一个 JSON 格式的字符串
+#     except Exception:
+#         data = output_text[0]  # 如果无法解析为 JSON，直接返回生成的文本
+        
+#     # print(type(data))
+#     # print()
+#     # print(data)
+
+#     return get_params_dict(data)
+
+
+from transformers  import Qwen2_5_VLForConditionalGeneration, AutoTokenizer, AutoProcessor
+from qwen_vl_utils import process_vision_info
+
+def local_llm(prompt,  model_path=None):
+    
+    # default: Load the model on the available device(s)
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model_path, torch_dtype=torch.float16, device_map="cuda"
+    )
+    
+    # default processer
+    processor = AutoProcessor.from_pretrained(model_path, use_fast=True)
+
+    # print(processor)  # 检查是否包含 video/image processor 等模块
+    
     with open('./data/RAG_template.txt', 'r') as f:
         template=f.readlines()
     user_textprompt=f"Caption:{prompt} \n Let's think step by step:"
     textprompt= f"{' '.join(template)} \n {user_textprompt}"
-    model_input = tokenizer(textprompt, return_tensors="pt").to("cuda")
-    model.eval()
-    with torch.no_grad():
-        print('waiting for LLM response')
-        res = model.generate(**model_input, max_new_tokens=4096)[0]
-        output=tokenizer.decode(res, skip_special_tokens=True)
-        output = output.replace(textprompt,'')
-    return get_params_dict(output)
-    # return output
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": textprompt},
+            ],
+        }
+    ]
+    
+    # Preparation for inference
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    # image_inputs, video_inputs = process_vision_info(messages)
+    inputs = processor(
+        text=[text],
+        images=None,
+        videos=None,
+        padding=True,
+        return_tensors="pt",
+    )
+    inputs = inputs.to("cuda")
+    
+    # Inference: Generation of the output
+    generated_ids = model.generate(**inputs, max_new_tokens=128)
+    generated_ids_trimmed = [
+        out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    output_text = processor.batch_decode(
+        generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+    )
+    
+    print(output_text)
+    
+    return get_params_dict(output_text[0])

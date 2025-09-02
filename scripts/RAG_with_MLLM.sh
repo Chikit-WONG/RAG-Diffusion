@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p debug        # 指定GPU队列
-#SBATCH -o ./temp/output.txt  # 指定作业标准输出文件，%j为作业号  SBATCH -o output_%j.txt
-#SBATCH -e ./temp/err.txt    # 指定作业标准错误输出文件  SBATCH -e err_%j.txt
+#SBATCH -o ./temp/output_%j.txt  # 指定作业标准输出文件，%j为作业号  SBATCH -o output_%j.txt
+#SBATCH -e ./temp/err_%j.txt    # 指定作业标准错误输出文件  SBATCH -e err_%j.txt
 #SBATCH -n 1            # 指定CPU总核心数
 #SBATCH --gres=gpu:1    # 指定GPU卡数
 #SBATCH -D .        # 指定作业执行路径为当前目录
