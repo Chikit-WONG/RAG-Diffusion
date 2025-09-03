@@ -1,6 +1,6 @@
 import torch
 from RAG_pipeline_flux import RAG_FluxPipeline
-from RAG_MLLM import local_llm, GPT4
+from RAG_MLLM import local_llm_cpu, local_llm_gpu, GPT4
 
 pipe = RAG_FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16)
 pipe = pipe.to("cuda")
@@ -8,7 +8,7 @@ pipe = pipe.to("cuda")
 prompt = "A small elephant on the left and a huge rabbit on the right."
 
 # para_dict = GPT4(prompt,key='')
-para_dict = local_llm(prompt, model_path='../Qwen2.5-VL/models/Qwen2.5-VL-7B-Instruct')
+para_dict = local_llm_gpu(prompt, model_path='../Qwen2.5-VL/models/Qwen2.5-VL-7B-Instruct')
 print('-------------------------------------')
 print('Model out put:')
 print(type(para_dict))
