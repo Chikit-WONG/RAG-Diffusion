@@ -297,7 +297,7 @@ def local_llm_cpu(prompt,  model_path=None):
     
     return get_params_dict(output_text[0])
 
-def local_llm_gpu(prompt,  model_path=None):
+def local_llm(prompt,  model_path=None):
     
     # default: Load the model on the available device(s)
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
@@ -336,9 +336,22 @@ def local_llm_gpu(prompt,  model_path=None):
         return_tensors="pt",
     )
     inputs = inputs.to("cuda")
+    
+    # 输入长度
+    input_len = inputs["input_ids"].shape[-1]
+
+    # 模型的最大上下文窗口
+    max_ctx = getattr(model.config, "max_position_embeddings", 4096)  # Qwen2.5-VL 7B 是 4k
+
+    # 计算还能生成的 token 数
+    max_new = max_ctx - input_len
+
+    # 避免负数或太小
+    max_new = max(1, max_new)
+
 
     # Inference: Generation of the output
-    generated_ids = model.generate(**inputs, max_new_tokens=128)
+    generated_ids = model.generate(**inputs, max_new_tokens=max_new)
     generated_ids_trimmed = [
         out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
     ]
